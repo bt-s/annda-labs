@@ -15,8 +15,8 @@ np.random.seed(42)
 
 ## 3.1.1 Generation of linearly-separable data
 n = 100
-mA, sigmaA = [1.0, 0.5], 0.5
-mB, sigmaB = [-1.0, 0.0], 0.5
+mA, sigmaA = [1.0, 1.0], 0.5
+mB, sigmaB = [-1.0, -0.5], 0.5
 
 classA, classB = np.zeros((2, n)), np.zeros((2, n))
 classA[0, :] = np.random.randn(1, n) * sigmaA + mA[0]
