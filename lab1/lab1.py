@@ -15,9 +15,10 @@ from sklearn.utils import shuffle
 np.random.seed(42)
 
 # Flags to decide which part of  the program should be run
-SHOW_DATA_SCATTER_PLOT = True
-APPLY_DELTA_RULE = True
-APPLY_PERCEPTRON_LEARNING_RULE = True
+SHOW_DATA_SCATTER_PLOT = False
+APPLY_DELTA_RULE_BATCH = True
+APPLY_DELTA_RULE_SEQUENTIAL = True
+APPLY_PERCEPTRON_LEARNING_RULE = False
 
 
 def generate_data(n, mA, sigmaA, mB, sigmaB):
@@ -135,7 +136,7 @@ class DeltaClassifier:
         self.eta = eta
         self.W = np.random.rand(3, 1) # Initialize the weights
 
-    def train(self, X, t, animate=False):
+    def train(self, X, T, animate=False, batch=False):
         """Train the classifier
 
         Args:
@@ -143,17 +144,36 @@ class DeltaClassifier:
             y (np.ndarray): The targets vector
             animate (bool): Flag to determine whether to plot the decision
                             boundary on each epoch.
+            batch (bool): Flag to determine whether to use batch training,
+                          as opposed to sequential training
 
         Returns:
             None
         """
         for e in range(self.epochs):
-            dW = - self.eta * X.T @ (X@self.W - t) # Delta rule
-            if abs(dW.sum()) < 10**-4:
-                print((f'The delta ruled converged after {e} epochs (i.e. '
-                       f'abs(dW.sum() < 10**-4).'))
+            if batch:
+                dW = - self.eta * X.T @ (X@self.W - T) # Delta rule
+                self.W += dW # Update the weight vector
+
+                if abs(dW.sum()) < 10**-4:
+                    print((f'The delta ruled converged after {e} epochs (i.e. '
+                        f'abs(dW.sum() < 10**-4).'))
+                    break
+            else:
+                dw = 0
+                has_broken = False
+                for i, (x, t) in enumerate(zip(X, T)):
+                    dW = - self.eta * x.T * (x@self.W - t)
+                    self.W += dW.reshape(3,1) # Update the weight vector
+
+                    if abs(dW.sum()) < 10**-7:
+                        print((f'The delta ruled converged after {e} epochs (i.e. '
+                               f'abs(dW.sum() < 10**-4) and {i} data points.'))
+                        has_broken = True
+                        break
+                else: # Makes sure that the outer loop breaks if the inner breaks
+                    continue
                 break
-            self.W += dW # Update the weight vector
 
         if animate:
             decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
@@ -225,7 +245,11 @@ X, t = create_training_examples_and_targets(classA, classB)
 if SHOW_DATA_SCATTER_PLOT:
     create_data_scatter_plot(classA, classB)
 
-if APPLY_DELTA_RULE:
+if APPLY_DELTA_RULE_BATCH:
+    delta_learning = DeltaClassifier()
+    delta_learning.train(X, t, animate=True, batch=True)
+
+if APPLY_DELTA_RULE_SEQUENTIAL:
     delta_learning = DeltaClassifier()
     delta_learning.train(X, t, animate=True)
 
