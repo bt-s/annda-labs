@@ -25,10 +25,10 @@ def generate_data(n, mA, sigmaA, mB, sigmaB):
 
     Args:
         n (int): Number of data points to be generated per class
-        mA (float): Mean of classA
+        mA (np.ndarray): Means of classA
         sigmaA (float): Variabnce of classA
-        mB (float): Mean of classB
-        sigmaB (float): Variabnce of classB
+        mB (np.ndarray): Means of classB
+        sigmaB (float): Variance of classB
 
     Returns:
         classA (np.ndarray): Data points belonging to classA
@@ -44,23 +44,6 @@ def generate_data(n, mA, sigmaA, mB, sigmaB):
     classB[:, 1] = np.random.randn(1, n) * sigmaB + mB[1]
 
     return classA, classB
-
-
-def create_data_scatter_plot(classA, classB):
-    """Creates a scatter plot of the input data
-
-    Args:
-        classA (np.ndarray): Data points belonging to classA
-        classB (np.ndarray): Data points belonging to classB
-
-    Returns:
-        None
-    """
-    plt.scatter(classA[:, 0], classA[:, 1], color='red')
-    plt.scatter(classB[:, 0], classB[:, 1], color='green')
-    plt.xlabel("x1"), plt.ylabel("x2")
-    plt.title("Linearly separable data")
-    plt.show()
 
 
 def create_training_examples_and_targets(classA, classB):
@@ -94,6 +77,26 @@ def create_training_examples_and_targets(classA, classB):
     return X, t
 
 
+def create_data_scatter_plot(classA, classB):
+    """Creates a scatter plot of the input data
+
+    Args:
+        classA (np.ndarray): Data points belonging to classA
+        classB (np.ndarray): Data points belonging to classB
+
+    Returns:
+        None
+    """
+    plt.scatter(classA[:, 0], classA[:, 1], color='red')
+    plt.scatter(classB[:, 0], classB[:, 1], color='green')
+    axes = plt.gca()
+    axes.set_xlim([-2, 2])
+    axes.set_ylim([-2, 2])
+    plt.xlabel("x1"), plt.ylabel("x2")
+    plt.title("Linearly separable data")
+    plt.show()
+
+
 def decision_boundary_animation(classA, classB, x, W, title):
     """Draws the decision boundary
 
@@ -107,17 +110,21 @@ def decision_boundary_animation(classA, classB, x, W, title):
     Returns:
         None
     """
-    y = W[0]*x + W[1]*x + W[2]
+    axes = plt.gca()
+    axes.set_xlim([-2, 2])
+    axes.set_ylim([-2, 2])
+    plt.xlabel("x1"), plt.ylabel("x2")
+    y = -(W[0]*x + W[2])/W[1] # Will coincide with x2 in the plot
+    plt.plot(x, y, '-b', label="line")
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
-    plt.plot(x, y, '-b', label="line")
     plt.title(title)
     plt.show()
 
 
 class DeltaClassifier:
     """The delta learning classifier"""
-    def __init__(self, epochs=20, eta=0.001):
+    def __init__(self, epochs=200, eta=0.001):
         """Class constructor
 
         Args:
@@ -140,19 +147,22 @@ class DeltaClassifier:
         Returns:
             None
         """
-
         for e in range(self.epochs):
             dW = - self.eta * X.T @ (X@self.W - t) # Delta rule
+            if abs(dW.sum()) < 10**-4:
+                print((f'The delta ruled converged after {e} epochs (i.e. '
+                       f'abs(dW.sum() < 10**-4).'))
+                break
             self.W += dW # Update the weight vector
 
-            if animate:
-                decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
-                    self.W, title="Delta Learning Decision Boundary")
+        if animate:
+            decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
+                self.W, title="Delta Learning Decision Boundary")
 
 
 class Perceptron:
     """The perceptron learning classifier"""
-    def __init__(self, epochs=20, eta=0.001):
+    def __init__(self, epochs=200, eta=0.001):
         """Class constructor
 
         Args:
@@ -164,19 +174,17 @@ class Perceptron:
         self.W = np.random.rand(3, 1) # Initialize the weights
 
 
-    def predict(self, X, threshold=0):
+    def predict(self, x, threshold=0):
         """Perceptron prediction function
 
         Args:
-            X (np.ndarray): Data point to be predicted
+            x (np.ndarray): Data point to be predicted
             threshold (float): Threshold for perceptron activation function
 
         Returns:
             activation (int): Perceptron output (0 or 1)
         """
-        summation = X @ self.W
-        if summation > 0: return 1
-        else: return 0
+        return 1 if (x @ self.W >= 0) else -1.
 
 
     def train(self, X, T, animate):
@@ -188,15 +196,23 @@ class Perceptron:
             animate (bool): Flag to determine whether to plot the decision
                             boundary on each epoch.
         """
-        for _ in range(self.epochs):
-            if animate:
-                decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
-                        self.W, title="Perceptron Learning Decision Boundary")
+        for e in range(self.epochs):
+            has_misclassification = False
             for x, t in zip(X, T):
                 # t_pred must be of shape (1,)
-                t_pred = np.asarray(self.predict(x)).reshape(1,)
+                t_pred = self.predict(x, t)
+                if t_pred != t:
+                    has_misclassification = True
                 # Reshape required for correct broadcasting
-                self.W += self.eta * ((t - t_pred) * x).reshape(3,1)
+                self.W += self.eta * (t[0] - t_pred) / 2 * (x).reshape(3,1)
+            if not has_misclassification:
+                print(f'The perceptron converged after {e} epochs.')
+                break
+
+
+        if animate:
+            decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
+                    self.W, title="Perceptron Learning Decision Boundary")
 
 
 # Generate toy-data
