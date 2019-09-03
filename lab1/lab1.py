@@ -15,14 +15,15 @@ from sklearn.utils import shuffle
 np.random.seed(42)
 
 # Flags to decide which part of  the program should be run
-LINEARLY_SEPARABLE_DATA = False
-SHOW_DATA_SCATTER_PLOT = False
-APPLY_DELTA_RULE_BATCH = True
-APPLY_DELTA_RULE_SEQUENTIAL = True
+LINEARLY_SEPARABLE_DATA = True
+LINEARLY_UNSEPARABLE_DATA_3_1_3 = False
+SHOW_DATA_SCATTER_PLOT = True
+APPLY_DELTA_RULE_BATCH = False
+APPLY_DELTA_RULE_SEQUENTIAL = False
 APPLY_PERCEPTRON_LEARNING_RULE = False
 
 
-def generate_data(n, mA, sigmaA, mB, sigmaB):
+def generate_data(n, mA, sigmaA, mB, sigmaB, special_case=False):
     """Generates toy data
 
     Args:
@@ -31,16 +32,25 @@ def generate_data(n, mA, sigmaA, mB, sigmaB):
         sigmaA (float): Variabnce of classA
         mB (np.ndarray): Means of classB
         sigmaB (float): Variance of classB
+        special_case (bool): Flag to specify the special case of non-linearly
+                             separable data at 3.1.3
 
     Returns:
         classA (np.ndarray): Data points belonging to classA
         classB (np.ndarray): Data points belonging to classB
 
-    Note: a row in the lab description is a column in the code here, and vice versa.
-    This simplifies shuffling, and doesn't have any adverse side-effects
+    Note: a row in the lab description is a column in the code here, and vice
+    versa. This simplifies shuffling, and doesn't have any adverse side-effects.
     """
     classA, classB = np.zeros((n, 2)), np.zeros((n, 2))
-    classA[:, 0] = np.random.randn(1, n) * sigmaA + mA[0]
+
+    if special_case:
+        classA[:, 0] = np.hstack((np.random.randn(1, round(0.5*n))
+            * sigmaA - mA[0], np.random.randn(1, round(0.5*n))
+            * sigmaA - mA[0]))
+    else:
+        classA[:, 0] = np.random.randn(1, n) * sigmaA + mA[0]
+
     classA[:, 1] = np.random.randn(1, n) * sigmaA + mA[1]
     classB[:, 0] = np.random.randn(1, n) * sigmaB + mB[0]
     classB[:, 1] = np.random.randn(1, n) * sigmaB + mB[1]
@@ -79,12 +89,14 @@ def create_training_examples_and_targets(classA, classB):
     return X, t
 
 
-def create_data_scatter_plot(classA, classB):
+def create_data_scatter_plot(classA, classB, linearly_separable=False):
     """Creates a scatter plot of the input data
 
     Args:
         classA (np.ndarray): Data points belonging to classA
         classB (np.ndarray): Data points belonging to classB
+        linearly_separable (bool): Flag to specify whether data is linearly
+                                   separable
 
     Returns:
         None
@@ -95,7 +107,12 @@ def create_data_scatter_plot(classA, classB):
     axes.set_xlim([-2, 2])
     axes.set_ylim([-2, 2])
     plt.xlabel("x1"), plt.ylabel("x2")
-    plt.title("Linearly separable data")
+
+    if linearly_separable:
+        plt.title("Linearly separable data")
+    else:
+        plt.title("Linearly inseparable data")
+
     plt.show()
 
 
@@ -238,6 +255,10 @@ class Perceptron:
 if LINEARLY_SEPARABLE_DATA:
     classA, classB = generate_data(n=100, mA=[1.0, 1.0], sigmaA=0.4,
             mB=[-1.0, -0.5], sigmaB=0.4)
+
+elif LINEARLY_UNSEPARABLE_DATA_3_1_3:
+    classA, classB = generate_data(100, [1.0, 0.3], 0.2, [0.0, -0.1], 0.3)
+
 else:
     classA, classB = generate_data(n=100, mA=[.5, .5], sigmaA=0.5,
             mB=[-.5, -0.5], sigmaB=0.5)
@@ -247,7 +268,10 @@ else:
 X, t = create_training_examples_and_targets(classA, classB)
 
 if SHOW_DATA_SCATTER_PLOT:
-    create_data_scatter_plot(classA, classB)
+    if LINEARLY_SEPARABLE_DATA:
+        create_data_scatter_plot(classA, classB, linearly_separable=True)
+    else:
+        create_data_scatter_plot(classA, classB)
 
 if APPLY_DELTA_RULE_BATCH:
     delta_learning = DeltaClassifier()
