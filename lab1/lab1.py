@@ -17,6 +17,7 @@ np.random.seed(42)
 # Flags to decide which part of  the program should be run
 LINEARLY_SEPARABLE_DATA = True
 LINEARLY_UNSEPARABLE_DATA_3_1_3 = False
+SUBSAMPLE = True
 SHOW_DATA_SCATTER_PLOT = True
 APPLY_DELTA_RULE_BATCH = False
 APPLY_DELTA_RULE_SEQUENTIAL = False
@@ -54,6 +55,27 @@ def generate_data(n, mA, sigmaA, mB, sigmaB, special_case=False):
     classA[:, 1] = np.random.randn(1, n) * sigmaA + mA[1]
     classB[:, 0] = np.random.randn(1, n) * sigmaB + mB[0]
     classB[:, 1] = np.random.randn(1, n) * sigmaB + mB[1]
+
+    return classA, classB
+
+
+def subsample_data(classA, classB, percA, percB):
+    """Subsample from classA and classB by percentages
+
+    Args:
+        classA (np.ndarray): Data points belonging to classA
+        classB (np.ndarray): Data points belonging to classB
+        percA (int): What percentage should be randomly selected from classA
+        percB (int): What percentage should be randomly selected from classB
+
+    Returns:
+        classA (np.ndarray): Subsampled data points belonging to classA
+        classB (np.ndarray): Subsampled data points belonging to classB
+    """
+    sizeA = round(classA.shape[0] / 100 * percA)
+    sizeB = round(classB.shape[0] / 100 * percB)
+    classA = classA[np.random.randint(classA.shape[0], size=sizeA), :]
+    classB = classB[np.random.randint(classB.shape[0], size=sizeB), :]
 
     return classA, classB
 
@@ -263,6 +285,8 @@ else:
     classA, classB = generate_data(n=100, mA=[.5, .5], sigmaA=0.5,
             mB=[-.5, -0.5], sigmaB=0.5)
 
+if SUBSAMPLE:
+    classA, classB = subsample_data(classA, classB, 25, 25)
 
 # Transform data to training examples and targets
 X, t = create_training_examples_and_targets(classA, classB)
