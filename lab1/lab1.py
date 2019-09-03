@@ -161,7 +161,6 @@ class DeltaClassifier:
                     break
             else:
                 dw = 0
-                has_broken = False
                 for i, (x, t) in enumerate(zip(X, T)):
                     dW = - self.eta * x.T * (x@self.W - t)
                     self.W += dW.reshape(3,1) # Update the weight vector
@@ -169,7 +168,6 @@ class DeltaClassifier:
                     if abs(dW.sum()) < 10**-7:
                         print((f'The delta ruled converged after {e} epochs (i.e. '
                                f'abs(dW.sum() < 10**-4) and {i} data points.'))
-                        has_broken = True
                         break
                 else: # Makes sure that the outer loop breaks if the inner breaks
                     continue
