@@ -15,6 +15,7 @@ from sklearn.utils import shuffle
 np.random.seed(42)
 
 # Flags to decide which part of  the program should be run
+LINEARLY_SEPARABLE_DATA = False
 SHOW_DATA_SCATTER_PLOT = False
 APPLY_DELTA_RULE_BATCH = True
 APPLY_DELTA_RULE_SEQUENTIAL = True
@@ -234,8 +235,13 @@ class Perceptron:
 
 
 # Generate toy-data
-classA, classB = generate_data(n=100, mA=[1.0, 1.0], sigmaA=0.4,
-        mB=[-1.0, -0.5], sigmaB=0.4)
+if LINEARLY_SEPARABLE_DATA:
+    classA, classB = generate_data(n=100, mA=[1.0, 1.0], sigmaA=0.4,
+            mB=[-1.0, -0.5], sigmaB=0.4)
+else:
+    classA, classB = generate_data(n=100, mA=[.5, .5], sigmaA=0.5,
+            mB=[-.5, -0.5], sigmaB=0.5)
+
 
 # Transform data to training examples and targets
 X, t = create_training_examples_and_targets(classA, classB)
