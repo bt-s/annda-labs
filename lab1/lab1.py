@@ -16,12 +16,13 @@ np.random.seed(42)
 
 # Flags to decide which part of  the program should be run
 LINEARLY_SEPARABLE_DATA = True
-LINEARLY_UNSEPARABLE_DATA_3_1_3 = False
+LINEARLY_UNSEPARABLE_DATA_3_1_3 = True
 SUBSAMPLE = True
 SHOW_DATA_SCATTER_PLOT = True
-APPLY_DELTA_RULE_BATCH = False
-APPLY_DELTA_RULE_SEQUENTIAL = False
-APPLY_PERCEPTRON_LEARNING_RULE = False
+APPLY_DELTA_RULE_BATCH = True
+APPLY_DELTA_RULE_SEQUENTIAL = True
+APPLY_PERCEPTRON_LEARNING_RULE = True
+BIAS = True
 
 
 def generate_data(n, mA, sigmaA, mB, sigmaB, special_case=False):
@@ -138,7 +139,7 @@ def create_data_scatter_plot(classA, classB, linearly_separable=False):
     plt.show()
 
 
-def decision_boundary_animation(classA, classB, x, W, title):
+def decision_boundary_animation(classA, classB, x, W, title, bias=True):
     """Draws the decision boundary
 
     Args:
@@ -147,6 +148,7 @@ def decision_boundary_animation(classA, classB, x, W, title):
         x (np.ndarray): A linspace
         W (np.ndarrat): The weight vector
         title (str): Plot title
+        bias (bool): Flag to determine whether to use the bias weight
 
     Returns:
         None
@@ -155,11 +157,17 @@ def decision_boundary_animation(classA, classB, x, W, title):
     axes.set_xlim([-2, 2])
     axes.set_ylim([-2, 2])
     plt.xlabel("x1"), plt.ylabel("x2")
-    y = -(W[0]*x + W[2])/W[1] # Will coincide with x2 in the plot
+
+    if bias:
+        y = -(W[0]*x + W[2])/W[1] # y will coincide with x2 in the plot
+        plt.title(title)
+    else:
+        y = -(W[0]*x)/W[1]
+        plt.title(title + " without bias")
+
     plt.plot(x, y, '-b', label="line")
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
-    plt.title(title)
     plt.show()
 
 
@@ -176,7 +184,7 @@ class DeltaClassifier:
         self.eta = eta
         self.W = np.random.rand(3, 1) # Initialize the weights
 
-    def train(self, X, T, animate=False, batch=False):
+    def train(self, X, T, animate=False, batch=False, bias=True):
         """Train the classifier
 
         Args:
@@ -186,10 +194,15 @@ class DeltaClassifier:
                             boundary on each epoch.
             batch (bool): Flag to determine whether to use batch training,
                           as opposed to sequential training
+            bias (bool): Flag to determine whether to use the bias weight
 
         Returns:
             None
         """
+        if not bias:
+            self.W = self.W[:-1]
+            X = X[:, :-1]
+
         for e in range(self.epochs):
             if batch:
                 dW = - self.eta * X.T @ (X@self.W - T) # Delta rule
@@ -215,7 +228,7 @@ class DeltaClassifier:
 
         if animate:
             decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
-                self.W, title="Delta Learning Decision Boundary")
+                self.W, title="Delta Learning Decision Boundary", bias=bias)
 
 
 class Perceptron:
@@ -299,7 +312,10 @@ if SHOW_DATA_SCATTER_PLOT:
 
 if APPLY_DELTA_RULE_BATCH:
     delta_learning = DeltaClassifier()
-    delta_learning.train(X, t, animate=True, batch=True)
+    if BIAS:
+        delta_learning.train(X, t, animate=True, batch=True)
+    else:
+        delta_learning.train(X, t, animate=True, batch=True, bias=False)
 
 if APPLY_DELTA_RULE_SEQUENTIAL:
     delta_learning = DeltaClassifier()
