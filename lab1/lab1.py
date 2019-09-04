@@ -124,6 +124,33 @@ def decision_boundary_animation(classA, classB, x, W, title):
     plt.show()
 
 
+def approx_decision_boundary_animation(classA, classB, x, net, title):
+    """Draws the approximated decision boundary e.g. network output = 0
+
+    Args:
+        classA (np.ndarray): The data corresponding to class A
+        classB (np.ndarray): The data corresponding to class B
+        x (np.ndarray): A linspace
+        W (np.ndarrat): The weight vector
+        title (str): Plot title
+
+    Returns:
+        None
+    """
+    axes = plt.gca()
+    axes.set_xlim([-2, 2])
+    axes.set_ylim([-2, 2])
+    plt.xlabel("x1"), plt.ylabel("x2")
+    net.forward_pass(x)[1]  
+
+    plt.contour(x, Z, [0] color='black')
+
+    plt.scatter(classA[:, 0], classA[:, 1], color='red')
+    plt.scatter(classB[:, 0], classB[:, 1], color='green')
+    plt.title(title)
+    plt.show()
+
+
 class DeltaClassifier:
     """The delta learning classifier"""
     def __init__(self, epochs=200, eta=0.001):
@@ -249,7 +276,6 @@ class TwoLayerPerceptron:
         self.epochs = epochs
         self.eta = eta
 
-
     def initialize_weights(self, X, t):
         """Initialize the weight matrices
 
@@ -294,7 +320,6 @@ class TwoLayerPerceptron:
         """
         return np.multiply((1+ x), (1-x)) / 2
 
-
     def forward_pass(self, X):
         """ Forward pass of the baackprop algorithm
 
@@ -309,7 +334,6 @@ class TwoLayerPerceptron:
         o = self._activation_function(h @ self.W)
 
         return h, o
-
 
     def predict(self, X, threshold=0):
         """Multilayer perceptron prediction function
@@ -326,7 +350,6 @@ class TwoLayerPerceptron:
 
         return X
 
-
     def compute_accuracy(self, X, t):
         """Calculate training/testing accuracy
 
@@ -342,8 +365,7 @@ class TwoLayerPerceptron:
 
         return 1 - np.mean(p != t)
 
-
-    def train(self, X, t, print_acc=False):
+    def train(self, X, t, print_acc=False, animate=False):
         """Train the two-layer perceptron
 
         Args:
@@ -378,6 +400,9 @@ class TwoLayerPerceptron:
 
             if acc == 1.0:
                 print((f'Complete convergence after {e} epochs.'))
+                if animate:
+                    approx_decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
+                        self, title="Delta Learning Decision Boundary")
                 break
 
 
@@ -405,5 +430,5 @@ if APPLY_PERCEPTRON_LEARNING_RULE:
 
 if APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE:
     clf = TwoLayerPerceptron()
-    clf.train(X, t, print_acc=True)
+    clf.train(X, t, print_acc=True, animate=True)
 
