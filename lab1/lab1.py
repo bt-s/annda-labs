@@ -15,13 +15,13 @@ from sklearn.utils import shuffle
 np.random.seed(42)
 
 # Flags to decide which part of  the program should be run
-LINEARLY_SEPARABLE_DATA = True
+LINEARLY_SEPARABLE_DATA = False
 LINEARLY_UNSEPARABLE_DATA_3_1_3 = True
-SUBSAMPLE = True
-SHOW_DATA_SCATTER_PLOT = True
-APPLY_DELTA_RULE_BATCH = True
-APPLY_DELTA_RULE_SEQUENTIAL = True
-APPLY_PERCEPTRON_LEARNING_RULE = True
+SUBSAMPLE = False
+SHOW_DATA_SCATTER_PLOT = False
+APPLY_DELTA_RULE_BATCH = False
+APPLY_DELTA_RULE_SEQUENTIAL = False
+APPLY_PERCEPTRON_LEARNING_RULE = False
 APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE = True
 BIAS = True
 
@@ -172,14 +172,14 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True):
     plt.show()
 
 
-def approx_decision_boundary_animation(classA, classB, x, net, title):
+def approx_decision_boundary_animation(classA, classB, net, title):
     """Draws the approximated decision boundary e.g. network output = 0
 
     Args:
         classA (np.ndarray): The data corresponding to class A
         classB (np.ndarray): The data corresponding to class B
         x (np.ndarray): A linspace
-        W (np.ndarrat): The weight vector
+        net (np.ndarrat): The network object.
         title (str): Plot title
 
     Returns:
@@ -189,10 +189,14 @@ def approx_decision_boundary_animation(classA, classB, x, net, title):
     axes.set_xlim([-2, 2])
     axes.set_ylim([-2, 2])
     plt.xlabel("x1"), plt.ylabel("x2")
-    net.forward_pass(x)[1]  
-
-    plt.contour(x, Z, [0] color='black')
-
+    res = np.linspace(-2, 2, 1000)
+    xlist, ylist = np.meshgrid(res, res)
+    linspace = np.vstack((np.ravel(xlist), np.ravel(ylist)))
+    linspace = np.vstack((linspace, np.ones((1, len(linspace[0])))))
+    linspace = np.transpose(linspace)
+    Z = net.predict(net.forward_pass(linspace)[1])
+    Z = np.reshape(Z, (len(xlist), len(xlist[0])))
+    plt.contour(res, res, Z, [0], color='black')
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
     plt.title(title)
@@ -255,7 +259,7 @@ class DeltaClassifier:
                 break
 
         if animate:
-            decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
+            decision_boundary_animation(classA, classB,
                 self.W, title="Delta Learning Decision Boundary", bias=bias)
 
 
@@ -414,6 +418,8 @@ class TwoLayerPerceptron:
            (float): The accuracy
         """
         # Make a prediction based on the perceptron's output
+        print("Len(X): ",len(X), "Len(X[0]): ",len(X[0]))
+        print("X = ", X)
         p = self.predict(self.forward_pass(X)[1])
 
         return 1 - np.mean(p != t)
@@ -453,10 +459,12 @@ class TwoLayerPerceptron:
 
             if acc == 1.0:
                 print((f'Complete convergence after {e} epochs.'))
-                if animate:
-                    approx_decision_boundary_animation(classA, classB, np.linspace(-2, 2, 100),
-                        self, title="Delta Learning Decision Boundary")
+                
                 break
+        if animate:
+            approx_decision_boundary_animation(classA, classB,
+                self, title="Delta Learning Decision Boundary")
+            
 
 
 # Generate toy-data
