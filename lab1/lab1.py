@@ -120,13 +120,14 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True):
 
     if bias:
         y = -(W[0]*x + W[2])/W[1] # y will coincide with x2 in the plot
+        plt.title(title)
     else:
         y = -(W[0]*x)/W[1]
+        plt.title(title + " without bias")
 
     plt.plot(x, y, '-b', label="line")
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
-    plt.title(title)
     plt.show()
 
 
