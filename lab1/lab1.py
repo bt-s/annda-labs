@@ -241,7 +241,7 @@ class TwoLayerPerceptron:
         """Class constructor
 
         Args:
-            h (int): Number of hidden layers
+            h (int): Number of hidden nodes
             epochs (int): Number of training epochs
             eta (float): The learning rate
         """
@@ -260,8 +260,8 @@ class TwoLayerPerceptron:
         Returns:
             None
         """
-        n = X.shape[0] # Number of data points
-        d = X.shape[1] # Dimensionality of data point
+        # Number of data poitns and the dimensionality of data points
+        n, d = X.shape[0], X.shape[1]
 
         # Initialize the weights
         self.V = np.random.normal(0, 1/np.sqrt(d), (d, self.h))
