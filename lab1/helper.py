@@ -184,3 +184,93 @@ def approx_decision_boundary_animation(classA, classB, net, title):
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
     plt.title(title)
     plt.show()
+
+
+def mackey_glass(seq_length=2000, beta=0.2, gamma=0.1, tau=25,
+        x0=1.5, n=10):
+    """Generate a data sequence using the approximated Mackey Glass time-series
+
+    Args:
+      seq_length (int): The length of the output sequence
+      beta (float): MG beta parameter
+      gamma (float): MG gamma parameter
+      tau (int): MG tau parameter
+      x0 (float): Starting value of the sequence
+
+    Returns:
+      x (np.ndarray): Sequence based on Mackey-Glass time-series approximation
+    """
+    # Pre-allocate the array
+    x = np.zeros((seq_length, 1))
+
+    x[0] = x0
+    for t in range(0, seq_length-1):
+        x[t+1] = x[t] + beta * x[t - tau] / (1 + x[t - tau]**10) - gamma * x[t]
+
+    return x
+
+
+def create_mg_data(seq):
+    """Create training examples and targets based on a MG time-series sequence
+
+    Note:
+        To predict x[t+5] we use x[t], x[t-5], x[t-10], x[t-15] and x[t-20]
+
+    Args:
+        seg (np.ndarray): Time-series sequence
+
+    Returns:
+        X (np.ndarray): Matrix of observations
+        T (np.ndarray): Matrix of targets
+    """
+    # Pre-allocate arrays for X and T. The first 20 and last 5 values of seq
+    # cannot be used for training, hence the -25
+    X, T = np.zeros((len(seq)-25, 5)), np.zeros((len(seq)-25))
+
+    # Iterate through all conceivable sequences of 5 training values
+    for i in range(20, len(seq)-5):
+        X[i-20] = [seq[i-20], seq[i-15], seq[i-10], seq[i-5], seq[i]]
+        T[i-20] = seq[i+5]
+
+    return X, T
+
+
+def plot_mg_time_series(seqs, names, title="MG time-series"):
+    """Generates a plot of the Mackey-Glass time-series
+
+    Args:
+        seqs (list): List of time series (np.ndarray)
+        names (list): Names of the sequences (str)
+        title (str): The title of the plot
+
+    Returns:
+        None
+    """
+    plt.xlabel("x"), plt.ylabel("y")
+    plt.title(title)
+
+    for seq, name in zip(seqs, names):
+        plt.plot(np.linspace(0, len(seq)-1, len(seq)), seq, label=f'{name}')
+    plt.legend(loc='best')
+    plt.show()
+
+
+def plot_weights(weights, alphas):
+    """Creates a weight histogram for the hidden layer of a two-layer perceptron
+       based on the regularization constants alpha
+
+    Args:
+        weights (np.ndarray): Array containing all the weights
+        alphas (list): List of regularization constants
+
+    Returns:
+        None
+    """
+    for i, (weight, alpha) in enumerate(zip(weights, alphas)):
+        plt.bar(x=np.asarray(range(1,len(weight)+1))+.5-1/len(weights)*i,
+        width=1/len(weights), height=weight,
+        label=f'alpha: {alpha}')
+    plt.ylabel('y')
+    plt.legend(loc='best')
+    plt.xlabel('Weights')
+    plt.show()
