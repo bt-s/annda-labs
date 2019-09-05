@@ -33,7 +33,7 @@ if LINEARLY_SEPARABLE_DATA:
             mB=[-1.0, -0.5], sigmaB=0.4)
 
 elif LINEARLY_UNSEPARABLE_DATA_3_1_3:
-    classA, classB = generate_data(100, [1.0, 0.3], 0.2, [0.0, -0.1], 0.3)
+    classA, classB = generate_data(100, [1.0, 0.3], 0.2, [0.0, -0.1], 0.3, special_case=True)
 
 else:
     classA, classB = generate_data(n=100, mA=[.5, .5], sigmaA=0.5,
@@ -68,6 +68,6 @@ if APPLY_PERCEPTRON_LEARNING_RULE:
     perceptron.train(X, t, classA, classB, animate=True)
 
 if APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE:
-    clf = TwoLayerPerceptron()
+    clf = TwoLayerPerceptron(epochs=10000)
     clf.train(X, t, classA, classB, print_acc=True, animate=True)
 

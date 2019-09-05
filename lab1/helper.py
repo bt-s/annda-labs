@@ -33,7 +33,7 @@ def generate_data(n, mA, sigmaA, mB, sigmaB, special_case=False):
     if special_case:
         classA[:, 0] = np.hstack((np.random.randn(1, round(0.5*n))
             * sigmaA - mA[0], np.random.randn(1, round(0.5*n))
-            * sigmaA - mA[0]))
+            * sigmaA + mA[0]))
     else:
         classA[:, 0] = np.random.randn(1, n) * sigmaA + mA[0]
 
@@ -174,10 +174,10 @@ def approx_decision_boundary_animation(classA, classB, net, title):
     plt.xlabel("x1"), plt.ylabel("x2")
     res = np.linspace(-2, 2, 1000)
     xlist, ylist = np.meshgrid(res, res)
-    linspace = np.vstack((np.ravel(xlist), np.ravel(ylist)))
-    linspace = np.vstack((linspace, np.ones((1, len(linspace[0])))))
-    linspace = np.transpose(linspace)
-    Z = net.predict(net.forward_pass(linspace)[1])
+    grid_data = np.vstack((np.ravel(xlist), np.ravel(ylist)))
+    grid_data = np.vstack((grid_data, np.ones((1, len(grid_data[0])))))
+    grid_data = np.transpose(grid_data)
+    Z = net.predict(net.forward_pass(grid_data)[1])
     Z = np.reshape(Z, (len(xlist), len(xlist[0])))
     plt.contour(res, res, Z, [0], color='black')
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
