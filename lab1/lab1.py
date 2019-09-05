@@ -54,13 +54,14 @@ if SHOW_DATA_SCATTER_PLOT:
 if APPLY_DELTA_RULE_BATCH:
     delta_learning = DeltaClassifier()
     if BIAS:
-        delta_learning.train(X, t, animate=True, batch=True)
+        delta_learning.train(X, t, classA, classB, animate=True, batch=True)
     else:
-        delta_learning.train(X, t, animate=True, batch=True, bias=False)
+        delta_learning.train(X, t, classA, classB, animate=True, batch=True,
+                bias=False)
 
 if APPLY_DELTA_RULE_SEQUENTIAL:
     delta_learning = DeltaClassifier()
-    delta_learning.train(X, t, animate=True)
+    delta_learning.train(X, t, classA, classB, animate=True)
 
 if APPLY_PERCEPTRON_LEARNING_RULE:
     perceptron = Perceptron()
