@@ -33,7 +33,7 @@ def generate_data(n, mA, sigmaA, mB, sigmaB, special_case=False):
     if special_case:
         classA[:, 0] = np.hstack((np.random.randn(1, round(0.5*n))
             * sigmaA - mA[0], np.random.randn(1, round(0.5*n))
-            * sigmaA - mA[0]))
+            * sigmaA + mA[0]))
     else:
         classA[:, 0] = np.random.randn(1, n) * sigmaA + mA[0]
 
@@ -152,4 +152,35 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True):
     plt.plot(x, y, '-b', label="line")
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
+    plt.show()
+
+
+def approx_decision_boundary_animation(classA, classB, net, title):
+    """Draws the approximated decision boundary e.g. network output = 0
+
+    Args:
+        classA (np.ndarray): The data corresponding to class A
+        classB (np.ndarray): The data corresponding to class B
+        x (np.ndarray): A linspace
+        net (np.ndarrat): The network object.
+        title (str): Plot title
+
+    Returns:
+        None
+    """
+    axes = plt.gca()
+    axes.set_xlim([-2, 2])
+    axes.set_ylim([-2, 2])
+    plt.xlabel("x1"), plt.ylabel("x2")
+    res = np.linspace(-2, 2, 1000)
+    xlist, ylist = np.meshgrid(res, res)
+    grid_data = np.vstack((np.ravel(xlist), np.ravel(ylist)))
+    grid_data = np.vstack((grid_data, np.ones((1, len(grid_data[0])))))
+    grid_data = np.transpose(grid_data)
+    Z = net.predict(net.forward_pass(grid_data)[1])
+    Z = np.reshape(Z, (len(xlist), len(xlist[0])))
+    plt.contour(res, res, Z, [0], color='black')
+    plt.scatter(classA[:, 0], classA[:, 1], color='red')
+    plt.scatter(classB[:, 0], classB[:, 1], color='green')
+    plt.title(title)
     plt.show()

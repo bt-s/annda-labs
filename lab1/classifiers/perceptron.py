@@ -175,12 +175,13 @@ class TwoLayerPerceptron:
         return 1 - np.mean(p != t)
 
 
-    def train(self, X, t, print_acc=False):
+    def train(self, X, t, classA, classB, alpha=0.9, print_acc=False, animate=False):
         """Train the two-layer perceptron
 
         Args:
             X (np.ndarray): Observations of shape (n, d)
             t (np.ndarray): Targets of shape (n, 1)
+            alpha (float): Scalar to control contribution of past weight updates
             print_acc (bool): Flag to specify whether to print the accuracy
                               after each epoch
 
@@ -199,9 +200,16 @@ class TwoLayerPerceptron:
             delta_h = np.multiply(delta_o @ self.W.T,
                     self._d_activation_function(h))
 
+            if e == 0:
+                dV = X.T @ delta_h
+                dW = h.T @ delta_o
+            else:
+                dV = alpha * dV + (1-alpha) * X.T @ delta_h
+                dW = alpha * dW + (1-alpha) * h.T @ delta_o
+
             # Update the weights
-            self.V += - self.eta * X.T @ delta_h
-            self.W += - self.eta * h.T @ delta_o
+            self.V += - self.eta * dV
+            self.W += - self.eta * dW
 
             # Compute the accuracy
             acc = self.compute_accuracy(X, t)
@@ -211,3 +219,6 @@ class TwoLayerPerceptron:
             if acc == 1.0:
                 print((f'Complete convergence after {e} epochs.'))
                 break
+        if animate:
+            approx_decision_boundary_animation(classA, classB,
+                self, title="Delta Learning Decision Boundary")

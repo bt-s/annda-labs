@@ -16,13 +16,13 @@ from classifiers.perceptron import SingleLayerPerceptron, TwoLayerPerceptron
 np.random.seed(42)
 
 # Flags to decide which part of  the program should be run
-LINEARLY_SEPARABLE_DATA = True
+LINEARLY_SEPARABLE_DATA = False
 LINEARLY_UNSEPARABLE_DATA_3_1_3 = True
-SUBSAMPLE = True
-SHOW_DATA_SCATTER_PLOT = True
-APPLY_DELTA_RULE_BATCH = True
-APPLY_DELTA_RULE_SEQUENTIAL = True
-APPLY_PERCEPTRON_LEARNING_RULE = True
+SUBSAMPLE = False
+SHOW_DATA_SCATTER_PLOT = False
+APPLY_DELTA_RULE_BATCH = False
+APPLY_DELTA_RULE_SEQUENTIAL = False
+APPLY_PERCEPTRON_LEARNING_RULE = False
 APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE = True
 BIAS = True
 
@@ -33,7 +33,7 @@ if LINEARLY_SEPARABLE_DATA:
             mB=[-1.0, -0.5], sigmaB=0.4)
 
 elif LINEARLY_UNSEPARABLE_DATA_3_1_3:
-    classA, classB = generate_data(100, [1.0, 0.3], 0.2, [0.0, -0.1], 0.3)
+    classA, classB = generate_data(100, [1.0, 0.3], 0.2, [0.0, -0.1], 0.3, special_case=True)
 
 else:
     classA, classB = generate_data(n=100, mA=[.5, .5], sigmaA=0.5,
@@ -68,6 +68,6 @@ if APPLY_PERCEPTRON_LEARNING_RULE:
     perceptron.train(X, t, classA, classB, animate=True)
 
 if APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE:
-    clf = TwoLayerPerceptron()
-    clf.train(X, t, print_acc=True)
+    clf = TwoLayerPerceptron(epochs=10000)
+    clf.train(X, t, classA, classB, print_acc=True, animate=True)
 
