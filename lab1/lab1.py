@@ -64,8 +64,8 @@ if APPLY_DELTA_RULE_SEQUENTIAL:
     delta_learning.train(X, t, classA, classB, animate=True)
 
 if APPLY_PERCEPTRON_LEARNING_RULE:
-    perceptron = Perceptron()
-    perceptron.train(X, t, animate=True)
+    perceptron = SingleLayerPerceptron()
+    perceptron.train(X, t, classA, classB, animate=True)
 
 if APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE:
     clf = TwoLayerPerceptron()
