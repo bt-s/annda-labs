@@ -18,7 +18,7 @@ np.random.seed(42)
 # Flags to decide which part of  the program should be run
 LINEARLY_SEPARABLE_DATA = False
 LINEARLY_UNSEPARABLE_DATA_3_1_3 = True
-SUBSAMPLE = False
+SUBSAMPLE = True
 SHOW_DATA_SCATTER_PLOT = False
 APPLY_DELTA_RULE_BATCH = False
 APPLY_DELTA_RULE_SEQUENTIAL = False
@@ -40,10 +40,11 @@ else:
             mB=[-.5, -0.5], sigmaB=0.5)
 
 if SUBSAMPLE:
-    classA, classB = subsample_data(classA, classB, 25, 25)
+    classA_train, classB_train, classA_validation, classB_validation, = subsample_data(classA, classB, 25, 25)
 
 # Transform data to training examples and targets
 X, t = create_training_examples_and_targets(classA, classB)
+
 
 if SHOW_DATA_SCATTER_PLOT:
     if LINEARLY_SEPARABLE_DATA:
@@ -68,6 +69,11 @@ if APPLY_PERCEPTRON_LEARNING_RULE:
     perceptron.train(X, t, classA, classB, animate=True)
 
 if APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE:
-    clf = TwoLayerPerceptron(epochs=10000)
-    clf.train(X, t, classA, classB, print_acc=True, animate=True)
-
+    if SUBSAMPLE:
+        X_validation, t_validation = create_training_examples_and_targets(classA_validation, classB_validation)
+        X, t = create_training_examples_and_targets(classA_train, classB_train)
+        clf = TwoLayerPerceptron(epochs=5000)
+        clf.train(X, t, X_validation, t_validation, classA_train, classB_train,
+            classA_validation, classB_validation, print_acc=True, animate=True, subsampling=SUBSAMPLE)
+    else:
+        print("Stop it")
