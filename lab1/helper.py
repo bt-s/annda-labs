@@ -96,7 +96,8 @@ def create_training_examples_and_targets(classA, classB):
     return X, t
 
 
-def create_data_scatter_plot(classA, classB, linearly_separable=False):
+def create_data_scatter_plot(classA, classB, linearly_separable=False, fname="",
+        save_plot=False):
     """Creates a scatter plot of the input data
 
     Args:
@@ -104,6 +105,8 @@ def create_data_scatter_plot(classA, classB, linearly_separable=False):
         classB (np.ndarray): Data points belonging to classB
         linearly_separable (bool): Flag to specify whether data is linearly
                                    separable
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -120,10 +123,13 @@ def create_data_scatter_plot(classA, classB, linearly_separable=False):
     else:
         plt.title("Linearly inseparable data")
 
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 
-def decision_boundary_animation(classA, classB, x, W, title, bias=True):
+def decision_boundary_animation(classA, classB, x, W, title, bias=True, fname="",
+        save_plot=False):
     """Draws the decision boundary
 
     Args:
@@ -133,6 +139,8 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True):
         W (np.ndarrat): The weight vector
         title (str): Plot title
         bias (bool): Flag to determine whether to use the bias weight
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -152,10 +160,13 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True):
     plt.plot(x, y, '-b', label="line")
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 
-def approx_decision_boundary_animation(classA, classB, net, title):
+def approx_decision_boundary_animation(classA, classB, net, title, fname="",
+    save_plot=False):
     """Draws the approximated decision boundary e.g. network output = 0
 
     Args:
@@ -164,6 +175,8 @@ def approx_decision_boundary_animation(classA, classB, net, title):
         x (np.ndarray): A linspace
         net (np.ndarrat): The network object.
         title (str): Plot title
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -183,6 +196,8 @@ def approx_decision_boundary_animation(classA, classB, net, title):
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
     plt.title(title)
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 
@@ -235,13 +250,16 @@ def create_mg_data(seq):
     return X, T
 
 
-def plot_mg_time_series(seqs, names, title="MG time-series"):
+def plot_mg_time_series(seqs, names, title="MG time-series", fname="",
+        save_plot=False):
     """Generates a plot of the Mackey-Glass time-series
 
     Args:
         seqs (list): List of time series (np.ndarray)
         names (list): Names of the sequences (str)
         title (str): The title of the plot
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -252,16 +270,21 @@ def plot_mg_time_series(seqs, names, title="MG time-series"):
     for seq, name in zip(seqs, names):
         plt.plot(np.linspace(0, len(seq)-1, len(seq)), seq, label=f'{name}')
     plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 
-def plot_weights(weights, alphas):
+def plot_weights(weights, alphas, title, fname="", save_plot=False):
     """Creates a weight histogram for the hidden layer of a two-layer perceptron
        based on the regularization constants alpha
 
     Args:
         weights (np.ndarray): Array containing all the weights
         alphas (list): List of regularization constants
+        title (str): Plot title
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -273,4 +296,7 @@ def plot_weights(weights, alphas):
     plt.ylabel('y')
     plt.legend(loc='best')
     plt.xlabel('Weights')
+    plt.tight_layout()
+    plt.title(title)
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
