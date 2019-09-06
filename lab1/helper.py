@@ -300,3 +300,17 @@ def plot_weights(weights, alphas, title, fname="", save_plot=False):
     plt.title(title)
     plt.savefig(fname, bbox_inches='tight')
     plt.show()
+
+
+def mean_squared_error(y_true, y_pred):
+    """Calculate the mean squared error
+
+    Args:
+        y_true (np.ndarray): True labels
+        y_pred (np.ndarray): Predicted labels
+
+    Returns:
+        (float): MSE
+    """
+    return np.square(np.subtract(y_true, y_pred)).mean()
+
