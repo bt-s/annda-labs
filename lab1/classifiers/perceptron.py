@@ -230,4 +230,5 @@ class TwoLayerPerceptron:
         if animate and subsampling:
             plot_accuracy(self.train_acc, self.validation_acc, title="Delta Learning Accuracy")
             approx_decision_boundary_animation(classA_train, classB_train, classA_validation,
-                classB_validation, self, title="Delta Learning Decision Boundary")
+                classB_validation, self, title="Delta Learning Decision Boundary",fname=""
+                , save_plot=False)

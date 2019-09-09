@@ -170,7 +170,7 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True, fname=""
 
 
 def approx_decision_boundary_animation(classA_train, classB_train, 
-    classA_validation, classB_validation, net, titlefname="", save_plot=False):
+    classA_validation, classB_validation, net, title, fname="", save_plot=False):
     """Draws the approximated decision boundary e.g. network output = 0
 
     Args:
