@@ -77,6 +77,8 @@ class TwoLayerPerceptron:
             epochs (int): Number of training epochs
             eta (float): The learning rate
         """
+        self.train_acc = []
+        self.validation_acc = []
         self.h = h
         self.epochs = epochs
         self.eta = eta
@@ -175,7 +177,9 @@ class TwoLayerPerceptron:
         return 1 - np.mean(p != t)
 
 
-    def train(self, X, t, classA, classB, alpha=0.9, print_acc=False, animate=False):
+    def train(self, X, t, X_validation, t_validation, classA_train,
+            classB_train, classA_validation, classB_validation, alpha=0.9, 
+            print_acc=False, animate=False, subsampling=False):
         """Train the two-layer perceptron
 
         Args:
@@ -213,12 +217,18 @@ class TwoLayerPerceptron:
 
             # Compute the accuracy
             acc = self.compute_accuracy(X, t)
+            self.train_acc.append(acc)
+            acc = self.compute_accuracy(X_validation, t_validation)
+            self.validation_acc.append(acc)
             if print_acc:
-                print(f'The accuracy after epoch {e}: {acc}')
+                print(f'The training accuracy after epoch {e}: {acc}')
+                print(f'The validation accuracy after epoch {e}: {acc}')
 
             if acc == 1.0:
                 print((f'Complete convergence after {e} epochs.'))
                 break
-        if animate:
-            approx_decision_boundary_animation(classA, classB,
-                self, title="Delta Learning Decision Boundary")
+        if animate and subsampling:
+            plot_accuracy(self.train_acc, self.validation_acc, title="Delta Learning Accuracy")
+            approx_decision_boundary_animation(classA_train, classB_train, classA_validation,
+                classB_validation, self, title="Delta Learning Decision Boundary",fname=""
+                , save_plot=False)

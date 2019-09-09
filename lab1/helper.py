@@ -54,15 +54,18 @@ def subsample_data(classA, classB, percA, percB):
         percB (int): What percentage should be randomly selected from classB
 
     Returns:
-        classA (np.ndarray): Subsampled data points belonging to classA
-        classB (np.ndarray): Subsampled data points belonging to classB
+        classA_train (np.ndarray): Subsampled training set data points belonging to classA
+        classB_train (np.ndarray): Subsampled training set data points belonging to classB
+        classA_validation (np.ndarray): Subsampled validation set data points belonging to classA
+        classB_validation (np.ndarray): Subsampled validation set data points belonging to classB
     """
     sizeA = round(classA.shape[0] / 100 * percA)
     sizeB = round(classB.shape[0] / 100 * percB)
-    classA = classA[np.random.randint(classA.shape[0], size=sizeA), :]
-    classB = classB[np.random.randint(classB.shape[0], size=sizeB), :]
-
-    return classA, classB
+    classA_train = classA[np.random.randint(classA.shape[0], size=sizeA), :]
+    classB_train = classB[np.random.randint(classB.shape[0], size=sizeB), :]
+    classA_validation = np.array([[x[0], x[1]] for x in classA if x not in classA_train])
+    classB_validation = np.array([[x[0], x[1]] for x in classB if x not in classB_train])
+    return classA_train, classB_train, classA_validation, classB_validation
 
 
 def create_training_examples_and_targets(classA, classB):
@@ -79,16 +82,17 @@ def create_training_examples_and_targets(classA, classB):
     """
     # Get number of data points per class
     n = classA.shape[0]
+    m = classB.shape[0]
 
     # Add an bias row to the matrices representing the two different classes
     classA = np.hstack((classA, np.ones((n, 1))))
-    classB = np.hstack((classB, np.ones((n, 1))))
+    classB = np.hstack((classB, np.ones((m, 1))))
 
     # Store the training data in a big matrix
     X = np.vstack((classA, classB))
 
     # Create a targets vector where classA = -1 and classB = 1
-    t = np.vstack((np.ones((n, 1))*-1, np.ones((n, 1))))
+    t = np.vstack((np.ones((n, 1))*-1, np.ones((m, 1))))
 
     # Shuffle the training data and targets in a consistent manner
     X, t = shuffle(X, t, random_state=0)
@@ -165,8 +169,8 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True, fname=""
     plt.show()
 
 
-def approx_decision_boundary_animation(classA, classB, net, title, fname="",
-    save_plot=False):
+def approx_decision_boundary_animation(classA_train, classB_train, 
+    classA_validation, classB_validation, net, title, fname="", save_plot=False):
     """Draws the approximated decision boundary e.g. network output = 0
 
     Args:
@@ -193,13 +197,28 @@ def approx_decision_boundary_animation(classA, classB, net, title, fname="",
     Z = net.predict(net.forward_pass(grid_data)[1])
     Z = np.reshape(Z, (len(xlist), len(xlist[0])))
     plt.contour(res, res, Z, [0], color='black')
-    plt.scatter(classA[:, 0], classA[:, 1], color='red')
-    plt.scatter(classB[:, 0], classB[:, 1], color='green')
+    plt.scatter(classA_train[:, 0], classA_train[:, 1], color='red')
+    plt.scatter(classB_train[:, 0], classB_train[:, 1], color='green')
+    plt.scatter(classA_validation[:, 0], classA_validation[:, 1], color='red', marker='x')
+    plt.scatter(classB_validation[:, 0], classB_validation[:, 1], color='green', marker='x')
     plt.title(title)
     plt.tight_layout()
     plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
+def plot_accuracy(train_acc, validation_acc, title):
+    """Plots the accuracy over epochs
+
+    Args:
+        train_acc (list): List with precalculated training accuracy from each epoch in order
+        validation_acc (list): List with precalculated validation accuracy from each epoch in order
+        title (str): Plot title
+    """
+    training_acc_plot = plt.plot(range(len(train_acc)), train_acc, '-g', label="Training accuracy")
+    validation_acc_plot = plt.plot(range(len(validation_acc)), validation_acc, '-b', label="Validation accuracy")
+    plt.legend()
+    plt.title(title)
+    plt.show()
 
 def mackey_glass(seq_length=2000, beta=0.2, gamma=0.1, tau=25,
         x0=1.5, n=10):
