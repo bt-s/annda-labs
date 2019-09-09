@@ -44,6 +44,28 @@ def generate_data(n, mA, sigmaA, mB, sigmaB, special_case=False):
     return classA, classB
 
 
+def generate_encoder_data():
+    """Generates all 8 combinations of one-hot encoded data 
+            for a vector of size 8
+
+    Returns:
+        X (np.ndarray):
+        classB (np.ndarray): Data points belonging to classB
+    """
+    X = np.zeros((8, 8))
+    blank = -1*np.ones(8,)
+    diag = 0
+    for idx, val in enumerate(blank):
+        blank = -1*np.ones(8,)
+        if(idx == diag):
+            temp = -1*np.ones(8,)
+            temp[idx] = 1
+            X[idx] = temp
+            diag += 1
+            continue
+    return X, X
+
+
 def subsample_data(classA, classB, percA, percB):
     """Subsample from classA and classB by percentages
 
@@ -319,6 +341,25 @@ def plot_weights(weights, alphas, title, fname="", save_plot=False):
     plt.title(title)
     plt.savefig(fname, bbox_inches='tight')
     plt.show()
+
+
+def test_hidden_layer_values(clf):
+    """
+        Wierd placeholder for trying to make sense of the weight vectors.
+        Should be looking at input weights instead of output weights.
+    """
+    hidden = product([10, -10], repeat=3)
+    hidden = list(hidden)
+    result = []
+    for comb in hidden:
+        result.append(np.multiply(np.array([[comb[0]], [comb[1]], [comb[2]]]), clf.W))
+    
+    out = [0,0,0,0,0,0,0,0]
+    for res in result:
+        for idx, row in enumerate(res[0]):
+            out[idx] += res[0][idx] + res[1][idx] + res[2][idx]
+        print(out)
+        out = [0,0,0,0,0,0,0,0]
 
 
 def mean_squared_error(y_true, y_pred):
