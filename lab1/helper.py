@@ -100,7 +100,8 @@ def create_training_examples_and_targets(classA, classB):
     return X, t
 
 
-def create_data_scatter_plot(classA, classB, linearly_separable=False):
+def create_data_scatter_plot(classA, classB, linearly_separable=False, fname="",
+        save_plot=False):
     """Creates a scatter plot of the input data
 
     Args:
@@ -108,6 +109,8 @@ def create_data_scatter_plot(classA, classB, linearly_separable=False):
         classB (np.ndarray): Data points belonging to classB
         linearly_separable (bool): Flag to specify whether data is linearly
                                    separable
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -124,10 +127,13 @@ def create_data_scatter_plot(classA, classB, linearly_separable=False):
     else:
         plt.title("Linearly inseparable data")
 
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 
-def decision_boundary_animation(classA, classB, x, W, title, bias=True):
+def decision_boundary_animation(classA, classB, x, W, title, bias=True, fname="",
+        save_plot=False):
     """Draws the decision boundary
 
     Args:
@@ -137,6 +143,8 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True):
         W (np.ndarrat): The weight vector
         title (str): Plot title
         bias (bool): Flag to determine whether to use the bias weight
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -156,10 +164,13 @@ def decision_boundary_animation(classA, classB, x, W, title, bias=True):
     plt.plot(x, y, '-b', label="line")
     plt.scatter(classA[:, 0], classA[:, 1], color='red')
     plt.scatter(classB[:, 0], classB[:, 1], color='green')
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 
-def approx_decision_boundary_animation(classA_train, classB_train, classA_validation, classB_validation, net, title):
+def approx_decision_boundary_animation(classA_train, classB_train, 
+    classA_validation, classB_validation, net, titlefname="", save_plot=False):
     """Draws the approximated decision boundary e.g. network output = 0
 
     Args:
@@ -168,6 +179,8 @@ def approx_decision_boundary_animation(classA_train, classB_train, classA_valida
         x (np.ndarray): A linspace
         net (np.ndarrat): The network object.
         title (str): Plot title
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
@@ -189,6 +202,8 @@ def approx_decision_boundary_animation(classA_train, classB_train, classA_valida
     plt.scatter(classA_validation[:, 0], classA_validation[:, 1], color='red', marker='x')
     plt.scatter(classB_validation[:, 0], classB_validation[:, 1], color='green', marker='x')
     plt.title(title)
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 def plot_accuracy(train_acc, validation_acc, title):
@@ -196,14 +211,125 @@ def plot_accuracy(train_acc, validation_acc, title):
 
     Args:
         train_acc (list): List with precalculated training accuracy from each epoch in order
-        train_acc (list): List with precalculated validation accuracy from each epoch in order
+        validation_acc (list): List with precalculated validation accuracy from each epoch in order
         title (str): Plot title
+    """
+    training_acc_plot = plt.plot(range(len(train_acc)), train_acc, '-g', label="Training accuracy")
+    validation_acc_plot = plt.plot(range(len(validation_acc)), validation_acc, '-b', label="Validation accuracy")
+    plt.legend()
+    plt.title(title)
+    plt.show()
+
+def mackey_glass(seq_length=2000, beta=0.2, gamma=0.1, tau=25,
+        x0=1.5, n=10):
+    """Generate a data sequence using the approximated Mackey Glass time-series
+
+    Args:
+      seq_length (int): The length of the output sequence
+      beta (float): MG beta parameter
+      gamma (float): MG gamma parameter
+      tau (int): MG tau parameter
+      x0 (float): Starting value of the sequence
+
+    Returns:
+      x (np.ndarray): Sequence based on Mackey-Glass time-series approximation
+    """
+    # Pre-allocate the array
+    x = np.zeros((seq_length, 1))
+
+    x[0] = x0
+    for t in range(0, seq_length-1):
+        x[t+1] = x[t] + beta * x[t - tau] / (1 + x[t - tau]**10) - gamma * x[t]
+
+    return x
+
+
+def create_mg_data(seq):
+    """Create training examples and targets based on a MG time-series sequence
+
+    Note:
+        To predict x[t+5] we use x[t], x[t-5], x[t-10], x[t-15] and x[t-20]
+
+    Args:
+        seg (np.ndarray): Time-series sequence
+
+    Returns:
+        X (np.ndarray): Matrix of observations
+        T (np.ndarray): Matrix of targets
+    """
+    # Pre-allocate arrays for X and T. The first 20 and last 5 values of seq
+    # cannot be used for training, hence the -25
+    X, T = np.zeros((len(seq)-25, 5)), np.zeros((len(seq)-25))
+
+    # Iterate through all conceivable sequences of 5 training values
+    for i in range(20, len(seq)-5):
+        X[i-20] = [seq[i-20], seq[i-15], seq[i-10], seq[i-5], seq[i]]
+        T[i-20] = seq[i+5]
+
+    return X, T
+
+
+def plot_mg_time_series(seqs, names, title="MG time-series", fname="",
+        save_plot=False):
+    """Generates a plot of the Mackey-Glass time-series
+
+    Args:
+        seqs (list): List of time series (np.ndarray)
+        names (list): Names of the sequences (str)
+        title (str): The title of the plot
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
 
     Returns:
         None
     """
-    training_accuracy = plt.plot(range(len(train_acc)), train_acc, '-g', label="Training accuracy")
-    validation_accuracy = plt.plot(range(len(validation_acc)), validation_acc, '-b', label="Validation accuracy")
-    plt.legend()
+    plt.xlabel("x"), plt.ylabel("y")
     plt.title(title)
+
+    for seq, name in zip(seqs, names):
+        plt.plot(np.linspace(0, len(seq)-1, len(seq)), seq, label=f'{name}')
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
     plt.show()
+
+
+def plot_weights(weights, alphas, title, fname="", save_plot=False):
+    """Creates a weight histogram for the hidden layer of a two-layer perceptron
+       based on the regularization constants alpha
+
+    Args:
+        weights (np.ndarray): Array containing all the weights
+        alphas (list): List of regularization constants
+        title (str): Plot title
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
+
+    Returns:
+        None
+    """
+    for i, (weight, alpha) in enumerate(zip(weights, alphas)):
+        plt.bar(x=np.asarray(range(1,len(weight)+1))+.5-1/len(weights)*i,
+        width=1/len(weights), height=weight,
+        label=f'alpha: {alpha}')
+    plt.ylabel('y')
+    plt.legend(loc='best')
+    plt.xlabel('Weights')
+    plt.tight_layout()
+    plt.title(title)
+    plt.savefig(fname, bbox_inches='tight')
+    plt.show()
+
+
+def mean_squared_error(y_true, y_pred):
+    """Calculate the mean squared error
+
+    Args:
+        y_true (np.ndarray): True labels
+        y_pred (np.ndarray): Predicted labels
+
+    Returns:
+        (float): MSE
+    """
+    return np.square(np.subtract(y_true, y_pred)).mean()
+
