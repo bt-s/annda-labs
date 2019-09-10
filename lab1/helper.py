@@ -86,8 +86,32 @@ def subsample_data(classA, classB, percA, percB):
     classA_train = classA[np.random.randint(classA.shape[0], size=sizeA), :]
     classB_train = classB[np.random.randint(classB.shape[0], size=sizeB), :]
     classA_validation = np.array([[x[0], x[1]] for x in classA if x not in classA_train])
-    classB_validation = np.array([[x[0], x[1]] for x in classB if x not in classB_train])
+    classB_validation = np.array([[x[0]] for x in classB if x not in classB_train])
     return classA_train, classB_train, classA_validation, classB_validation
+
+def subsample_function_data(X, Z, percTrain):
+    """Subsample from classA and classB by percentages
+
+    Args:
+        X (np.ndarray): Data points
+        Z (np.ndarray): Target values
+        percTrain (int): What percentage should be randomly selected for training set
+
+    Returns:
+        X_train (np.ndarray): Training set
+        T_train (np.ndarray): Training target values
+        X_validation (np.ndarray): Validation data
+        T_validation (np.ndarray): Validation target values
+    """
+    size_train = round(X.shape[0] / 100 * percTrain)
+    random_idx_train = np.random.randint(X.shape[0], size=size_train)
+    random_idx_test = [i for i in range(X.shape[0]) if i not in random_idx_train]
+    random_idx_test = shuffle(random_idx_test)
+    X_train = X[random_idx_train, :]
+    T_train = Z[random_idx_train, :]
+    X_validation = X[random_idx_test, :]
+    T_validation = Z[random_idx_test, :]
+    return X_train, T_train, X_validation, T_validation
 
 
 def create_training_examples_and_targets(classA, classB):
@@ -236,8 +260,23 @@ def plot_accuracy(train_acc, validation_acc, title):
         validation_acc (list): List with precalculated validation accuracy from each epoch in order
         title (str): Plot title
     """
-    training_acc_plot = plt.plot(range(len(train_acc)), train_acc, '-g', label="Training accuracy")
-    validation_acc_plot = plt.plot(range(len(validation_acc)), validation_acc, '-b', label="Validation accuracy")
+    plt.plot(range(len(train_acc)), train_acc, '-g', label="Training accuracy")
+    plt.plot(range(len(validation_acc)), validation_acc, '-b', label="Validation accuracy")
+    plt.legend()
+    plt.title(title)
+    plt.show()
+
+def plot_mse(train_mse, validation_mse, tot_mse, title):
+    """Plots the accuracy over epochs
+
+    Args:
+        train_acc (list): List with precalculated training accuracy from each epoch in order
+        validation_acc (list): List with precalculated validation accuracy from each epoch in order
+        title (str): Plot title
+    """
+    plt.plot(range(len(train_mse)), train_mse, '-g', label="Training MSE")
+    plt.plot(range(len(validation_mse)), validation_mse, '-b', label="Validation MSE")
+    plt.plot(range(len(tot_mse)), tot_mse, '-y', label="Total MSE")
     plt.legend()
     plt.title(title)
     plt.show()
@@ -303,10 +342,12 @@ def generate_bell_shape_data():
     X, Y = np.meshgrid(x, y)
     Z = np.exp(-0.1 * ((X ** 2) + (Y ** 2))) - 0.5
 
+    """
     ax = plt.axes(projection='3d')
     ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
     ax.set_title('surface')
     plt.show()
+    """
     
     return X, Y, Z
 
@@ -319,23 +360,19 @@ def bell_shape_training_examples(x, y, z):
     """Reshapes bell shape function data to traning examples and targets
     
     Args:
-        X (np.arr): List of time series (np.ndarray)
-        names (list): Names of the sequences (str)
-        title (str): The title of the plot
-        fname (str): File name for saving
-        save_plot (bool): Flag to specify whether to save the plot
-
+        x (np.ndarray): x gridspace shape(21,21)
+        y (np.ndarray): y gridspace shape(21,21)
+        z (np.ndarray): z function output shape(21,21)
     Returns:
         X (np.ndarray): Matrix of observations
         T (np.ndarray): Matrix of targets
         
     """
-    grid_data = np.vstack((np.ravel(x), np.ravel(y)))
-    grid_data = np.vstack((grid_data, np.ones((1, len(grid_data[0])))))
-    grid_data = np.transpose(grid_data)
-    T = np.reshape(z, (len(x), len(y)))
-    print(T)
-    return grid_data, T
+    X = np.vstack((np.ravel(x), np.ravel(y)))
+    X = np.vstack((X, np.ones((1, len(X[0])))))
+    X = np.transpose(X)
+    T = np.reshape(z, (len(X), 1))
+    return X, T
 
 
 def plot_mg_time_series(seqs, names, title="MG time-series", fname="",

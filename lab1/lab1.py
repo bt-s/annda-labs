@@ -12,7 +12,7 @@ import numpy as np
 from itertools import product
 from helper import *
 from classifiers.delta_rule import DeltaClassifier
-from classifiers.perceptron import SingleLayerPerceptron, TwoLayerPerceptron
+from classifiers.perceptron import SingleLayerPerceptron, TwoLayerPerceptron, TwoLayerFunctionApproximation
 from classifiers.encoder import Encoder
 
 np.random.seed(420)
@@ -39,6 +39,8 @@ if LINEARLY_SEPARABLE_DATA:
 elif LINEARLY_UNSEPARABLE_DATA_3_1_3:
     classA, classB = generate_data(100, [1.0, 0.3], 0.2, [0.0, -0.1], 0.3, special_case=True)
 
+elif FUNCTION_APPROXIMATION:
+    x, y, z = generate_bell_shape_data()
 
 else:
     classA, classB = generate_data(n=100, mA=[.5, .5], sigmaA=0.5,
@@ -51,7 +53,7 @@ if SUBSAMPLE:
 if ENCODER:
     X, t = generate_encoder_data()
 elif FUNCTION_APPROXIMATION:
-    X, t = generate_bell_shape_data()
+    X, t = bell_shape_training_examples(x, y, z)
 else:
     X, t = create_training_examples_and_targets(classA, classB)
 
@@ -90,7 +92,12 @@ if APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE:
         clf.train(X, t, X_validation, t_validation, classA_train, classB_train,
             classA_validation, classB_validation, print_acc=True, animate=True, subsampling=SUBSAMPLE)
     elif FUNCTION_APPROXIMATION:
-        plot_bell_shape(X, t)
+
+        X_train, T_train, X_validation, T_validation = subsample_function_data(X, t, 75)
+        clf = TwoLayerFunctionApproximation(h=10, epochs=10000)
+        clf.train(X, t, X_train, T_train, X_validation, T_validation,
+            print_acc=True, animate=True, subsampling=False)
+
     else:
         print("Stop it")
 
