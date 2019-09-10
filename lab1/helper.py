@@ -6,6 +6,7 @@ __author__ = "Anton Anderzén, Stella Katsarou, Bas Straathof"
 
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from sklearn.utils import shuffle
 
 
@@ -290,6 +291,37 @@ def create_mg_data(seq):
 
     return X, T
 
+def generate_bell_shape_data():
+    """Create bellshape data, training examples and targets
+
+    Returns:
+        X (np.ndarray): Matrix of observations
+        T (np.ndarray): Matrix of targets
+    """
+
+    x = np.arange(-5, 5.5, 0.5)
+    y = np.arange(-5, 5.5, 0.5)
+    X, Y = np.meshgrid(x, y)
+    Z = np.exp(-0.1 * ((X ** 2) + (Y ** 2))) - 0.5
+
+    ax = plt.axes(projection='3d')
+    ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
+    ax.set_title('surface')
+    plt.show()
+    """
+    grid_data = np.vstack((np.ravel(X), np.ravel(Y)))
+    grid_data = np.vstack((grid_data, np.ones((1, len(grid_data[0])))))
+    grid_data = np.transpose(grid_data)
+    T = np.reshape(Z, (len(x), len(y)))
+    print(T)
+    return grid_data, T"""
+
+def plot_bell_shape(X, t):
+    """Generates a 3D-plot of the bell shape data.
+
+
+    """
+
 
 def plot_mg_time_series(seqs, names, title="MG time-series", fname="",
         save_plot=False):
@@ -348,11 +380,11 @@ def test_hidden_layer_values(clf):
         Wierd placeholder for trying to make sense of the weight vectors.
         Should be looking at input weights instead of output weights.
     """
-    hidden = product([10, -10], repeat=3)
+    hidden = product([1, -1], repeat=3)
     hidden = list(hidden)
     result = []
     for comb in hidden:
-        result.append(np.multiply(np.array([[comb[0]], [comb[1]], [comb[2]]]), clf.W))
+        result.append(np.multiply(np.array([[comb[0]], [comb[1]], [comb[2]]]), clf.V))
     
     out = [0,0,0,0,0,0,0,0]
     for res in result:
