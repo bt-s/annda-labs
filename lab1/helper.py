@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-
 """helper.py Helper functions for data preparation and visualization purposes."""
 
 __author__ = "Anton Anderzén, Stella Katsarou, Bas Straathof"
@@ -308,19 +307,35 @@ def generate_bell_shape_data():
     ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
     ax.set_title('surface')
     plt.show()
-    """
-    grid_data = np.vstack((np.ravel(X), np.ravel(Y)))
-    grid_data = np.vstack((grid_data, np.ones((1, len(grid_data[0])))))
-    grid_data = np.transpose(grid_data)
-    T = np.reshape(Z, (len(x), len(y)))
-    print(T)
-    return grid_data, T"""
+    
+    return X, Y, Z
 
 def plot_bell_shape(X, t):
     """Generates a 3D-plot of the bell shape data.
 
 
     """
+def bell_shape_training_examples(x, y, z):
+    """Reshapes bell shape function data to traning examples and targets
+    
+    Args:
+        X (np.arr): List of time series (np.ndarray)
+        names (list): Names of the sequences (str)
+        title (str): The title of the plot
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
+
+    Returns:
+        X (np.ndarray): Matrix of observations
+        T (np.ndarray): Matrix of targets
+        
+    """
+    grid_data = np.vstack((np.ravel(x), np.ravel(y)))
+    grid_data = np.vstack((grid_data, np.ones((1, len(grid_data[0])))))
+    grid_data = np.transpose(grid_data)
+    T = np.reshape(z, (len(x), len(y)))
+    print(T)
+    return grid_data, T
 
 
 def plot_mg_time_series(seqs, names, title="MG time-series", fname="",
