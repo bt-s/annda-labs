@@ -406,4 +406,4 @@ class TwoLayerFunctionApproximation:
 
         if animate:
             plot_mse(self.train_mse, self.validation_mse, self.mse, title="Delta Learning MSE")
-
+            plot_approx_func(self)

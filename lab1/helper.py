@@ -342,20 +342,28 @@ def generate_bell_shape_data():
     X, Y = np.meshgrid(x, y)
     Z = np.exp(-0.1 * ((X ** 2) + (Y ** 2))) - 0.5
 
-    """
-    ax = plt.axes(projection='3d')
-    ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
-    ax.set_title('surface')
-    plt.show()
-    """
     
     return X, Y, Z
 
-def plot_bell_shape(X, t):
+def plot_approx_func(net):
     """Generates a 3D-plot of the bell shape data.
 
 
     """
+    x = np.arange(-5, 5.5, 0.1)
+    y = np.arange(-5, 5.5, 0.1)
+    X, Y = np.meshgrid(x, y)
+    grid = np.vstack((np.ravel(X), np.ravel(Y)))
+    grid = np.vstack((grid, np.ones((1, len(grid[0])))))
+    grid = np.transpose(grid)
+    Z = net.forward_pass(grid)[1]
+    Z = np.reshape(Z, (X.shape[0], X.shape[1]))
+    ax = plt.axes(projection='3d')
+    ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='viridis', edgecolor='none')
+    ax.set_title('surface')
+    plt.show()
+
+
 def bell_shape_training_examples(x, y, z):
     """Reshapes bell shape function data to traning examples and targets
     
