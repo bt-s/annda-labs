@@ -53,6 +53,43 @@ def generate_data(n, step_size, random=False, data_range=(0, 2*np.pi),
 
     return x, y
 
+def generate_noisy_data(n, step_size, random=False, data_range=(0, 2*np.pi),
+        sin2x=False, square2x=False, noise=[0,0.1]):
+    """Generates toy data
+
+    Args:
+        n (int): Number of data points to be generated (if applicable)
+        step_size (float): The step size (if applicable)
+        random (bool): Flag to specify whether to sample randomly
+        data_range (tuple): Data range
+        sin2x (bool): Flag to specify whether to generate data from sin(2x)
+                      function
+        square2x (bool): Flag to specify whether to generate data from
+                         square(2x) function
+
+    Returns:
+        x (np.ndarray): Array of input data points
+        y (np.ndarray): Array of output data points
+    """
+    if random:
+        # Sample randomly from data range
+        x = np.random.uniform(data_range[0], data_range[1], size=(n))
+        x += np.random.normal(noise[0], noise[1], x.shape)
+    else:
+        # Sample with a stepsize
+        x = np.arange(data_range[0], data_range[1], step_size)
+        x += np.random.normal(noise[0], noise[1], x.shape)
+
+    if sin2x:
+        y = np.sin(2*x)
+        y += np.random.normal(noise[0], noise[1], y.shape)
+
+    elif square2x:
+        y = np.fromiter(map(square, x), dtype=np.int)
+        y += np.random.normal(noise[0], noise[1], y.shape)
+
+    return x, y
+
 
 def plot_1d_funcs(input_seqs, output_seqs, names, title="", fname="",
         save_plot=False):
@@ -79,3 +116,19 @@ def plot_1d_funcs(input_seqs, output_seqs, names, title="", fname="",
     plt.tight_layout()
     plt.savefig(fname, bbox_inches='tight')
     plt.show()
+
+
+
+
+
+def plot_error_vs_rbfunits(errors,all_rbf_units,title="", fname="",
+        save_plot=False):
+    plt.xlabel("RBF units"), plt.ylabel("error")
+    plt.title(title)
+
+    plt.plot(all_rbf_units,errors, label="error")
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
+    plt.show()
+
