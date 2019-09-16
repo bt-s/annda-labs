@@ -45,7 +45,7 @@ class DeltaClassifier:
                 dW = - self.eta * X.T @ (X@self.W - T) # Delta rule
                 self.W += dW # Update the weight vector
 
-                if abs(dW.sum()) < 10**-4:
+                if abs(dW).sum() < 10**-4:
                     print((f'The delta ruled converged after {e} epochs (i.e. '
                         f'abs(dW.sum() < 10**-4).'))
                     break

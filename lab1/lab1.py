@@ -18,16 +18,16 @@ from classifiers.encoder import Encoder
 np.random.seed(420)
 
 # Flags to decide which part of  the program should be run
-LINEARLY_SEPARABLE_DATA = False
+LINEARLY_SEPARABLE_DATA = True
 LINEARLY_UNSEPARABLE_DATA_3_1_3 = False
 ENCODER = False
 SUBSAMPLE = False
 SHOW_DATA_SCATTER_PLOT = False
-APPLY_DELTA_RULE_BATCH = False
+APPLY_DELTA_RULE_BATCH = True
 APPLY_DELTA_RULE_SEQUENTIAL = False
 APPLY_PERCEPTRON_LEARNING_RULE = False
-APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE = True
-FUNCTION_APPROXIMATION = True
+APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE = False
+FUNCTION_APPROXIMATION = False
 BIAS = True
 
 
@@ -65,7 +65,7 @@ if SHOW_DATA_SCATTER_PLOT:
         create_data_scatter_plot(classA, classB)
 
 if APPLY_DELTA_RULE_BATCH:
-    delta_learning = DeltaClassifier()
+    delta_learning = DeltaClassifier(eta=0.001)
     if BIAS:
         delta_learning.train(X, t, classA, classB, animate=True, batch=True)
     else:
@@ -93,9 +93,27 @@ if APPLY_TWO_LAYER_PERCEPTRON_LEARNING_RULE:
             classA_validation, classB_validation, print_acc=True, animate=True, subsampling=SUBSAMPLE)
     elif FUNCTION_APPROXIMATION:
 
-        X_train, T_train, X_validation, T_validation = subsample_function_data(X, t, 75)
-        clf = TwoLayerFunctionApproximation(h=10, epochs=10000)
-        clf.train(X, t, X_train, T_train, X_validation, T_validation,
+
+        X_train, T_train, X_validation, T_validation = subsample_function_data(X, t, 20)
+        """
+        hidden = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 50]
+        clflist = []
+        for i in hidden:
+            print("Trying ", i , " hidden nodes")
+            clf = TwoLayerFunctionApproximation(h=i, epochs=4000)
+            clf.train(X, t, X_train, T_train, X_validation, T_validation,
+                      print_acc=False, animate=False, subsampling=False)
+            clflist.append(clf)
+        minMSE = 100
+        bestCLF = None
+        for clf in clflist:
+            if(clf.mse[-1] < minMSE):
+                minMSE = clf.mse[-1]
+                bestCLF = clf
+        print(clf.h)
+        """
+        clf = TwoLayerFunctionApproximation(h=25, epochs=4000)
+        clf.train(X, t, X_train, T_train, X_validation, T_validation, alpha=0,
             print_acc=True, animate=True, subsampling=False)
 
     else:

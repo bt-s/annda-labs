@@ -346,7 +346,7 @@ class TwoLayerFunctionApproximation:
         return 1 - np.mean(p != t)
 
 
-    def train(self, X, t, X_train, T_train, X_validation, T_validation, alpha=0.9,
+    def train(self, X, t, X_train, T_train, X_validation, T_validation, alpha=0.1,
             print_acc=False, animate=False, subsampling=False):
         """Train the two-layer perceptron
 
