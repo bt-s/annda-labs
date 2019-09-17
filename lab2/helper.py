@@ -4,6 +4,7 @@
 
 __author__ = "Anton Anderzén, Stella Katsarou, Bas Straathof"
 
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -113,4 +114,37 @@ def plot_error_vs_rbfunits(errors, all_rbf_units, title="", fname="",
     plt.tight_layout()
     plt.savefig(fname, bbox_inches='tight')
     plt.show()
+
+def get_animal_data(fname):
+    """Gets us the animal data
+
+    Args:
+        fname (str): Path to file
+
+    Returns:
+        props (np.ndarray): Array of binary integers representing animal
+                            characteristics
+    """
+    with open(fname, 'r') as f:
+        return np.asarray(f.read().split(',')).reshape((32, 84)).astype(int)
+
+
+def get_animal_names(fname):
+    """Gets us the animal names
+
+    Args:
+        fname (str): Path to file
+
+    Returns:
+        names (list): Containing the animal names
+    """
+    with open(fname, 'r') as f:
+        return f.read().replace("'", "").split()
+
+
+def get_cities(fname):
+    pass
+
+def get_votes(fname):
+    pass
 
