@@ -18,7 +18,7 @@ NOISY_DATA = False
 SIN2X = True
 SQUARE2X = True
 
-hidden_nodes_values=[0, 2, 4, 6, 63, 80]
+hidden_nodes_values=[2, 4, 6, 63, 80]
 
 if SIN2X:
     errors=[]
