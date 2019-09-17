@@ -21,7 +21,7 @@ def square(x):
 
 
 def generate_data(n, step_size, random=False, data_range=(0, 2*np.pi),
-        sin2x=False, square2x=False):
+        sin2x=False, square2x=False, noise=False, noise_level=(0, 0.3)):
     """Generates toy data
 
     Args:
@@ -33,6 +33,8 @@ def generate_data(n, step_size, random=False, data_range=(0, 2*np.pi),
                       function
         square2x (bool): Flag to specify whether to generate data from
                          square(2x) function
+        noise (bool): Specifies whether to corrupt the data using Gaussian noise
+        noise_level (tuple): Contains mean and variance of Gaussian noise
 
     Returns:
         x (np.ndarray): Array of input data points
@@ -41,15 +43,24 @@ def generate_data(n, step_size, random=False, data_range=(0, 2*np.pi),
     if random:
         # Sample randomly from data range
         x = np.random.uniform(data_range[0], data_range[1], size=(n))
+        if noise:
+            x += np.random.normal(noise_level[0], noise_level[1], x.shape)
+
     else:
         # Sample with a stepsize
         x = np.arange(data_range[0], data_range[1], step_size)
+        if noise:
+            x += np.random.normal(noise_level[0], noise_level[1], x.shape)
 
     if sin2x:
         y = np.sin(2*x)
+        if noise:
+            y += np.random.normal(noise_level[0], noise_level[1], y.shape)
 
     elif square2x:
         y = np.fromiter(map(square, x), dtype=np.int)
+        if noise:
+            y += np.random.normal(noise_level[0], noise_level[1], y.shape)
 
     return x, y
 
@@ -79,3 +90,27 @@ def plot_1d_funcs(input_seqs, output_seqs, names, title="", fname="",
     plt.tight_layout()
     plt.savefig(fname, bbox_inches='tight')
     plt.show()
+
+
+def plot_error_vs_rbfunits(errors, all_rbf_units, title="", fname="",
+        save_plot=False):
+    """Plot the error versus the number of RBF units
+
+    Args:
+       errors (list): List of error values
+       all_rbf_units (list): List of number of units
+       title (str): Plot title
+       fname (str): File name
+       save_plot (bool): Decides whether to save the plot
+
+    Returns:
+        None
+    """
+    plt.xlabel("RBF units"), plt.ylabel("error")
+    plt.title(title)
+    plt.plot(all_rbf_units, errors, label="error")
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig(fname, bbox_inches='tight')
+    plt.show()
+

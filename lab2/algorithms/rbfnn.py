@@ -122,12 +122,14 @@ class RBFNN:
                 f_pred = self.predict(X)
                 error = self.compute_total_error(f, f_pred)
 
+
                 if error_old - error < 10**-2:
                     print(f'The delta rule converged after {e} epochs')
                     print(f'The total MSE on the training set is: {error}')
                     break
 
                 error_old = error
+
 
 
     def compute_f_x_hat(self, phi_k):
@@ -166,5 +168,8 @@ class RBFNN:
         Returns:
             (float): The total approximation error
         """
-        return ((abs(f) - abs(f_hat.reshape(f_hat.shape[0], 1)))**2).sum()
+        return abs(((abs(f) - abs(f_hat.reshape(f_hat.shape[0], 1)))).mean())
+
+
+
 
