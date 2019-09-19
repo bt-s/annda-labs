@@ -9,7 +9,8 @@ import numpy as np
 
 class RBFNN:
     """The Radial Basis Function neural network"""
-    def __init__(self, n=30, eta=0.001, epochs=5000, solver="least_squares"):
+    def __init__(self, n=30, eta=0.001, epochs=5000, solver="least_squares",
+            cl=False, cl_strat=1, cl_iterations=50):
         """Class constructor
 
         Args:
@@ -19,11 +20,19 @@ class RBFNN:
             epochs (int): The number of training epochs if using the delta rule
             solver (str): Specifies what solver to use; either least_squares
                           or the delta rule.
+            cl (bool): Specifies whether to employ competitive learning
+            cl_strat (int): Specifies which competitive learning strategy to use
+                            has to be one of 1, 2
+            cl_iterations (int): The number of iterations in the competitive
+                                 learning loop
         """
         self.n = n
         self.eta = eta
         self.solver = solver
         self.Phi = None
+        self.cl = cl
+        self.cl_strat = cl_strat
+        self.cl_iterations = cl_iterations
 
         if solver=="delta_rule":
             self.epochs = epochs
@@ -67,6 +76,26 @@ class RBFNN:
             self.H[i][0] = np.random.uniform(x_range[0], x_range[1])
 
 
+    def competitive_learning(self, X):
+        """ Update the means of the hidden units by competitive learning
+
+        Args:
+            X (np.ndarray): Input data
+
+        Updates self.H based on CL
+        """
+        for i in range(self.cl_iterations):
+            x = np.random.choice(X)
+            winner = np.argmin(abs(abs(x) - abs(self.H[:, 0])))
+
+            if self.cl_strat == 1:
+                self.H[winner] += self.eta * x
+            elif self.cl_strat == 2:
+                self.H[winner] += self.eta * (abs(x) - abs(self.H[winner][0]))
+            else:
+                raise ValueError('cl_strat has to be one of 1, 2')
+
+
     def compute_phi(self, X):
         """Computes the RBF matrix Phi
 
@@ -96,6 +125,10 @@ class RBFNN:
         """
         # self.H (np.ndarray): mean and variance of hidden units (n, 2)
         self.initialize_hidden_nodes((min(X), max(X)), variance)
+
+        if self.cl:
+            self.competitive_learning(X)
+
         # Phi (np.ndarray): RBFs on the input (N, n)
         Phi = self.compute_phi(X)
 
