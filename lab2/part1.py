@@ -19,6 +19,7 @@ SIN2X = True
 SQUARE2X = False
 PLOT_REAL_VS_PRED_CURVES = True
 FIND_RESIDUAL_ERRORS = False
+USE_CL = True
 
 hidden_nodes_values = [15]#range(0, 30)
 
@@ -38,7 +39,7 @@ if SIN2X:
                     data_range=(0.05, 2*np.pi), sin2x=True)
 
         # Initialize the RFB neural network regressor
-        regressor = RBFNN(n=i, solver="least_squares")
+        regressor = RBFNN(n=i, solver="least_squares", cl=USE_CL)
 
         # Train the regressor
         regressor.train(X_train, y_train, variance=0.25)
