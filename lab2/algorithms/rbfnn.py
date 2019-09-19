@@ -10,7 +10,7 @@ import numpy as np
 class RBFNN:
     """The Radial Basis Function neural network"""
     def __init__(self, n=30, eta=0.001, epochs=5000, solver="least_squares",
-            cl=False, cl_strat=1, cl_iterations=50):
+            cl=False, leaky_learning=False, neighbour_count=10, cl_strat=1, cl_iterations=50):
         """Class constructor
 
         Args:
@@ -31,6 +31,8 @@ class RBFNN:
         self.solver = solver
         self.Phi = None
         self.cl = cl
+        self.leaky_learning = leaky_learning
+        self.neighbour_count = neighbour_count
         self.cl_strat = cl_strat
         self.cl_iterations = cl_iterations
 
@@ -86,15 +88,35 @@ class RBFNN:
         """
         for i in range(self.cl_iterations):
             x = np.random.choice(X)
-            winner = np.argmin(abs(abs(x) - abs(self.H[:, 0])))
+            if self.leaky_learning:
+                self.H = self.sort_neighbours(x) # Sort the Hidden nodes based on proximity to x
 
-            if self.cl_strat == 1:
-                self.H[winner] += self.eta * x
-            elif self.cl_strat == 2:
-                self.H[winner] += self.eta * (abs(x) - abs(self.H[winner][0]))
+                for i in range(min(self.n, self.neighbour_count)):
+                    if self.cl_strat == 1:
+                        self.H[i][0] += self.eta * x
+                    elif self.cl_strat == 2:
+                        self.H[i][0] += self.eta * (abs(x) - abs(self.H[i][0]))
+                    else:
+                        raise ValueError('cl_strat has to be one of 1, 2')
+                    print(f"Updated RBF unit {i} mean to, {self.H[i][0]} for x = {x}")
             else:
-                raise ValueError('cl_strat has to be one of 1, 2')
+                winner = np.argmin(abs(abs(x) - abs(self.H[:, 0])))
 
+                if self.cl_strat == 1:
+                    self.H[winner] += self.eta * x
+                elif self.cl_strat == 2:
+                    self.H[winner] += self.eta * (abs(x) - abs(self.H[winner][0]))
+                else:
+                    raise ValueError('cl_strat has to be one of 1, 2')
+
+    def sort_neighbours(self, x):
+
+        proximity = abs(abs(x) - abs(self.H[:, 0]))
+        zipped_pairs = zip(proximity, self.H)
+        sorted_with_proximity = sorted(zipped_pairs)
+        neighbours_sorted = [x for _, x in sorted_with_proximity]
+
+        return np.array(neighbours_sorted)
 
     def compute_phi(self, X):
         """Computes the RBF matrix Phi

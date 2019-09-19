@@ -20,8 +20,9 @@ SQUARE2X = False
 PLOT_REAL_VS_PRED_CURVES = True
 FIND_RESIDUAL_ERRORS = False
 USE_CL = True
+LEAKY_CL = True
 
-hidden_nodes_values = [15]#range(0, 30)
+hidden_nodes_values = [1, 5, 10, 15, 20]#range(0, 30)
 
 if SIN2X:
     errors=[]
@@ -39,7 +40,7 @@ if SIN2X:
                     data_range=(0.05, 2*np.pi), sin2x=True)
 
         # Initialize the RFB neural network regressor
-        regressor = RBFNN(n=i, solver="least_squares", cl=USE_CL)
+        regressor = RBFNN(n=i, solver="least_squares", cl=USE_CL, leaky_learning=LEAKY_CL)
 
         # Train the regressor
         regressor.train(X_train, y_train, variance=0.25)
