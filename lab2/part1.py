@@ -16,18 +16,21 @@ np.random.seed(42)
 
 NOISY_DATA = False
 SIN2X = True
-SQUARE2X = True
+SQUARE2X = False
+PLOT_REAL_VS_PRED_CURVES = True
+FIND_RESIDUAL_ERRORS = False
 
-hidden_nodes_values=[0, 2, 4, 6, 63, 80]
+hidden_nodes_values = [15]#range(0, 30)
 
 if SIN2X:
     errors=[]
     for i in hidden_nodes_values:
         if NOISY_DATA:
-            X_train, y_train = generate_data(None, step_size=0.1, sin2x=True, noise=True,
+            X_train, y_train = generate_data(None, step_size=0.1, sin2x=True,
+                    noise=True, noise_level=[0,0.1])
+            X_test, y_test = generate_data(None, step_size=0.1,
+                    data_range=(0.05, 2 * np.pi), sin2x=True, noise=True,
                     noise_level=[0,0.1])
-            X_test, y_test = generate_data(None, step_size=0.1, data_range=(0.05, 2 * np.pi),
-                    sin2x=True, noise=True, noise_level=[0,0.1])
 
         else:
             X_train, y_train = generate_data(None, step_size=0.1, sin2x=True)
@@ -35,22 +38,35 @@ if SIN2X:
                     data_range=(0.05, 2*np.pi), sin2x=True)
 
         # Initialize the RFB neural network regressor
-        regressor = RBFNN(n=i, solver="delta_rule")
-
+        regressor = RBFNN(n=i, solver="least_squares")
 
         # Train the regressor
-        regressor.train(X_train, y_train, variance=0.3)
+        regressor.train(X_train, y_train, variance=0.25)
 
         # Predict on the test set
         y_pred = regressor.predict(X_test)
 
         # Plot the real and the predicted curves
-        plot_1d_funcs([X_train, X_test], [y_train, y_pred], names=["y_train", "y_pred"],
-                title=f"sin(2x) for {i} hidden nodes", fname=f"sin(2x) for {i} hidden nodes")
+        if PLOT_REAL_VS_PRED_CURVES:
+            plot_1d_funcs([X_train, X_test], [y_train, y_pred],
+                    names=["y_train", "y_pred"],
+                    title=f"sin(2x) for {i} hidden nodes",
+                    fname=f"sin(2x) for {i} hidden nodes")
 
-        errors.append(regressor.compute_total_error(y_pred, y_test))
+        error = regressor.compute_total_error(y_pred, y_test)
+        errors.append(error)
+        print(errors)
 
-    plot_error_vs_rbfunits(errors,hidden_nodes_values,title="", fname="",save_plot=False)
+        if FIND_RESIDUAL_ERRORS:
+            if error < 0.001:
+                print(f'Res error smaller than 0.001 with {i} units.')
+            elif error < 0.01:
+                print(f'Res error smaller than 0.01 with {i} units.')
+            elif error < 0.1:
+                print(f'Res error smaller than 0.1 with {i} units.')
+
+    #plot_error_vs_rbfunits(errors, hidden_nodes_values, title="", fname="",
+            #save_plot=False)
 
 
 if SQUARE2X:
