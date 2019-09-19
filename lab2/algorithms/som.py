@@ -58,8 +58,6 @@ class SOM():
                 - key: names; list of length 32
         """
         for e in range(self.epochs):
-            self.neighborhood -= 2.5
-            print(self.neighborhood)
             animals = {}
             for i, name in enumerate(X["names"]):
                 differences = self.compute_differences(X["props"][i])
@@ -74,11 +72,13 @@ class SOM():
 
                 neighborhood = range(lbound, ubound)
 
-                self.W[neighborhood] += self.eta * (X["props"][i] -  self.W[neighborhood])
+                self.W[neighborhood] += self.eta * \
+                        (X["props"][i] - self.W[neighborhood])
+
+            self.neighborhood -= 2.5
 
         pos = OrderedDict()
         for i, name in enumerate(X["names"]):
-            pos[np.argmin(self.compute_differences(X["props"][i]))] = name
+            pos[name] = np.argmin(self.compute_differences(X["props"][i]))
 
-        print(pos)
-        print(sorted(pos))
+        print(sorted(pos.items(), key=lambda kv: kv[1]))
