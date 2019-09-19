@@ -85,20 +85,26 @@ class RBFNN:
             X (np.ndarray): Input data
 
         Updates self.H based on CL
+        The neighbour_count closest neighbours are updated according to how far away from x
+        they are compared to the closest neighbour.
+        Example, Two times the distance of the closest unit distance,
+        1/2 the learning rate
         """
         for i in range(self.cl_iterations):
             x = np.random.choice(X)
             if self.leaky_learning:
-                self.H = self.sort_neighbours(x) # Sort the Hidden nodes based on proximity to x
 
+                self.H = self.sort_neighbours(x) # Sort the Hidden nodes based on proximity to x
+                closest_dist = abs(abs(x) - abs(self.H[0, 0]))
                 for i in range(min(self.n, self.neighbour_count)):
                     if self.cl_strat == 1:
-                        self.H[i][0] += self.eta * x
+                        self.H[i][0] += (closest_dist/abs(abs(x) - abs(self.H[i, 0]))) * self.eta * x
                     elif self.cl_strat == 2:
-                        self.H[i][0] += self.eta * (abs(x) - abs(self.H[i][0]))
+                        self.H[i][0] += (closest_dist/abs(abs(x) - abs(self.H[i, 0]))) * self.eta * (abs(x) - abs(self.H[i][0]))
                     else:
                         raise ValueError('cl_strat has to be one of 1, 2')
                     print(f"Updated RBF unit {i} mean to, {self.H[i][0]} for x = {x}")
+                    print(f"Falloff for this node is {(closest_dist / abs(abs(x) - abs(self.H[i, 0])))}")
             else:
                 winner = np.argmin(abs(abs(x) - abs(self.H[:, 0])))
 
