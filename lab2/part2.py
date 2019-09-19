@@ -15,7 +15,8 @@ from algorithms.som import SOM
 np.random.seed(42)
 
 PROBLEM_4_1 = False
-PROBLEM_4_2 = True
+PROBLEM_4_2 = False
+PROBLEM_4_3 = True
 
 if PROBLEM_4_1:
     animal_props = get_animal_data("data_lab2/animals.dat")
@@ -42,4 +43,21 @@ if PROBLEM_4_2:
     plot_cities(X, names, 'SOM-generated salesman path', "plots/cities.pdf",
             save_plot=True)
 
+if PROBLEM_4_3:
+    X = get_votes("data_lab2/votes.dat")
+    names = get_names("data_lab2/mpnames.txt")
+    districts = get_districts("data_lab2/mpdistrict.dat")
+    parties = get_parties("data_lab2/mpparty.dat")
+    sexes = get_sex("data_lab2/mpsex.dat")
+
+    # Sanity checks
+    assert X.shape == (349, 31)
+    assert len(names) == 349
+    assert len(districts) == 349
+    assert len(parties) == 349
+    assert len(sexes) == 349
+
+    som = SOM(h=100, epochs=4, initial_neighborhood=12, problem=3)
+    som.initialize_weights(X)
+    som.train(X, names, districts, parties, sexes )
 
