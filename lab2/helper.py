@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 """helper.py Helper functions for data preparation and visualization purposes."""
 
@@ -89,7 +88,7 @@ def plot_1d_funcs(input_seqs, output_seqs, names, title="", fname="",
         plt.plot(input_seq, output_seq, label=f'{name}')
     plt.legend(loc='best')
     plt.tight_layout()
-    plt.savefig(fname, bbox_inches='tight')
+    if save_plot: plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 
@@ -112,8 +111,33 @@ def plot_error_vs_rbfunits(errors, all_rbf_units, title="", fname="",
     plt.plot(all_rbf_units, errors, label="error")
     plt.legend(loc='best')
     plt.tight_layout()
-    plt.savefig(fname, bbox_inches='tight')
+    if save_plot: plt.savefig(fname, bbox_inches='tight')
     plt.show()
+
+
+def plot_cities(X, names, title="", fname="", save_plot=False):
+    """Generates a plot of a 1D function
+
+    Args:
+        X (np.ndarray): Array of coordinates
+        names (list): Names of the cities
+        title (str): The title of the plot
+        fname (str): File name for saving
+        save_plot (bool): Flag to specify whether to save the plot
+
+    Returns:
+        None
+    """
+    plt.xlabel('x'), plt.ylabel('y')
+    plt.title(title)
+    for x, y, name in zip(X[:, 0], X[:, 1], names):
+        plt.scatter(x, y, label=f'{name}')
+        plt.text(x+.01, y+.01, name, fontsize=9)
+    plt.legend(loc='best')
+    plt.tight_layout()
+    if save_plot: plt.savefig(fname, bbox_inches='tight')
+    plt.show()
+
 
 def get_animal_data(fname):
     """Gets us the animal data
@@ -143,7 +167,24 @@ def get_animal_names(fname):
 
 
 def get_cities(fname):
-    pass
+    """Gets us the locations of the cities
+
+    Args:
+        fname (str): Path to file
+
+    Returns:
+        (np.ndarray): Numpy array containing the locations of the cities
+    """
+    with open(fname, 'r') as f:
+        cities, k = [], 1
+        with open('data_lab2/cities.dat', 'r') as f:
+            for line in f:
+                if (k > 4):
+                    for word in line.split():
+                        cities.append(float(word[:-1]))
+                k += 1
+
+        return np.array(cities).reshape((10, 2))
 
 def get_votes(fname):
     pass
