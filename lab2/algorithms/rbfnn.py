@@ -136,8 +136,7 @@ class RBFNN:
         if self.solver=="least_squares":
             f = f.reshape(f.shape[0], 1)
 
-            self.w = np.matmul(np.matmul(np.linalg.inv(np.matmul(
-                Phi.T, Phi)), Phi.T), f)
+            self.w = np.matmul(np.matmul(np.linalg.inv(np.matmul(Phi.T, Phi)), Phi.T), f)
 
         # Solve the weights sequentially using the delta rule
         elif self.solver=="delta_rule":
