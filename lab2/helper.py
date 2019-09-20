@@ -1,9 +1,9 @@
-#!/usr/bin/python3
 
 """helper.py Helper functions for data preparation and visualization purposes."""
 
 __author__ = "Anton Anderzén, Stella Katsarou, Bas Straathof"
 
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -88,7 +88,7 @@ def plot_1d_funcs(input_seqs, output_seqs, names, title="", fname="",
         plt.plot(input_seq, output_seq, label=f'{name}')
     plt.legend(loc='best')
     plt.tight_layout()
-    plt.savefig(fname, bbox_inches='tight')
+    if save_plot: plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
 def plot_in_inputspace(X, H, title="", fname="inputSpace"):
@@ -124,9 +124,10 @@ def plot_error_vs_rbfunits(errors, all_rbf_units, title="", fname="",
     plt.plot(all_rbf_units, errors, label="error")
     plt.legend(loc='best')
     plt.tight_layout()
-    plt.savefig(fname, bbox_inches='tight')
+    if save_plot: plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
+    
 def plot_cities(X, names, title="", fname="", save_plot=False):
     """Generates a plot of a 1D function
 
@@ -173,6 +174,7 @@ def mps_plot(coords, info_dict, title="", fname="", save_plot=False):
     if save_plot: plt.savefig(fname, bbox_inches='tight')
     plt.show()
 
+    
 def get_ballistic_data(fname):
     """Gets us the ballistics data
 
@@ -188,6 +190,7 @@ def get_ballistic_data(fname):
         list.remove('')
         list = np.asarray(list)
         return np.asarray(list).reshape((100, 4)).astype(float)
+
 
 def get_animal_data(fname):
     """Gets us the animal data
@@ -347,5 +350,4 @@ def convert_int_to_grid_point(i):
         return (0, i)
     else:
         return (int(str(i)[0]), i%10)
-
 
