@@ -17,6 +17,7 @@ np.random.seed(42)
 NOISY_DATA = False
 SIN2X = True
 SQUARE2X = False
+<<<<<<< Updated upstream
 PLOT_REAL_VS_PRED_CURVES = True
 FIND_RESIDUAL_ERRORS = False
 USE_CL = True
