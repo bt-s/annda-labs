@@ -18,8 +18,8 @@ class HopfieldNet:
                                     matrix to all zeros
         """
         self.max_it = max_it
-        self.W = None
         self.zero_diag = zero_diag
+        self.W = None
 
 
     @staticmethod
@@ -49,8 +49,7 @@ class HopfieldNet:
         Returns:
             (np.ndarray): Array of integers
         """
-        return np.asarray([1 if x > 0 else -1 if x < 0 else x for x in X],
-                dtype=int)
+        return np.asarray([1 if x >= 0 else -1 for x in X], dtype=int)
 
 
     def train(self, X):
