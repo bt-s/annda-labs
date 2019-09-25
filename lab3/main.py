@@ -16,6 +16,7 @@ from algorithms.hopfield import HopfieldNet
 A3_1 = True
 A3_1_a = False
 A3_1_b = True
+A3_1_c = True
 
 
 if A3_1:
@@ -30,6 +31,12 @@ if A3_1:
     x2d = np.asarray([1, 1, -1, -1, -1, 1, -1, -1]).reshape((1, 8))
     x3d = np.asarray([1, 1, 1, -1, 1, 1, -1, 1]).reshape((1, 8))
     Xd = np.vstack([x1d, x2d, x3d])
+
+    # More dissimilar inputs
+    x1md = [1, 1, -1, 1, -1, -1, -1, 1] # 4 out of 8 dissimilar
+    x2md = [1, 1, 1, 1, 1, 1, -1, -1]   # 5 out of 8 dissimilar
+    x3md = [1, -1, -1, 1, 1, 1, -1, 1]  # 5 out of 8 dissimilar
+    Xmd = np.vstack((x1md, x2md, x3md))
 
     # Initialize the Hopfield network
     nn = HopfieldNet(zero_diag=False)
@@ -61,5 +68,16 @@ if A3_1:
         print(f'There are {attractors.shape[0]} attractors:')
         print(attractors)
 
+    if A3_1_c:
+        # Update Xd up to stable point convergence
+        Xmd_star = nn.recall(Xmd)
+
+        # Check whether Xd_star has converged to X
+        print(nn.arrays_equal(Xmd_star, X, element_wise=True))
+
+        # Check whether they converge to an attractor
+        for x in Xmd_star:
+            if tuple(x) in attractors:
+                print("Nice")
 
 
