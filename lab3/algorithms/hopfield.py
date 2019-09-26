@@ -9,16 +9,22 @@ import numpy as np
 
 class HopfieldNet:
     """The Hopfield neural network"""
-    def __init__(self, max_it=100, zero_diag=False):
+    def __init__(self, max_it=100, zero_diag=False, asyn=False, all_units=False):
         """Class constructor
 
         Args:
             max_it (int): Maximum number of update steps
             zero_diag (bool): Whether to set the diagonal of the weight
                                     matrix to all zeros
+            asyn (bool): Determines whether to update asynchronously
+            all_units (bool): Determines whether all units should be updated
+                              asynchronously. If not, len(x) units are randomly
+                              sampled with replacement and updated.
         """
         self.max_it = max_it
         self.zero_diag = zero_diag
+        self.asyn = asyn
+        self.all_units = all_units
         self.W = None
 
 
@@ -49,7 +55,11 @@ class HopfieldNet:
         Returns:
             (np.ndarray): Array of integers
         """
-        return np.asarray([1 if x >= 0 else -1 for x in X], dtype=int)
+        if type(X) == np.int64:
+            return 1 if X >= 0 else -1
+
+        else:
+            return np.asarray([1 if x >= 0 else -1 for x in X], dtype=int)
 
 
     def train(self, X):
@@ -71,14 +81,27 @@ class HopfieldNet:
             X (np.ndarray): The input data
 
         Returns:
-            X_star (np.ndarray): The update X
+            X (np.ndarray): The updated X
         """
-        X_star = np.zeros(X.shape).astype(int)
-
+        X_new = np.copy(X)
         for i, x in enumerate(X):
-            X_star[i, :] = self.sign(x@self.W)
+            if self.asyn:
+                if self.all_units:
+                    indices = np.arange(len(x))
+                    np.random.shuffle(indices)
+                    # Update each unit exactly once, but in random error
+                    for idx in indices:
+                        X_new[i, idx] = self.sign(x@self.W[idx])
+                else:
+                    # Sample units with replacement and do len(x) updates
+                    for _ in range(len(x)):
+                        idx = np.random.randint(0, len(x))
+                        X_new[i, idx] = self.sign(x@self.W[idx])
 
-        return X_star
+            else:
+                X_new[i, :] = self.sign(x@self.W)
+
+        return X_new
 
 
     def recall(self, X):
@@ -93,7 +116,6 @@ class HopfieldNet:
         """
         for i in range(self.max_it):
             X_new = self.update_rule(X)
-
             if self.arrays_equal(X, X_new):
                 print(f'It took {i} iterations to converge to fixed points.')
                 break
