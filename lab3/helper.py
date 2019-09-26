@@ -28,5 +28,20 @@ def plot_images(images, ixs=None):
             plt.show()
 
 
+def add_noise(x, noise_level):
+    """Adds noise to a pattern
 
+    Args:
+        x (np.ndarray): The input pattern
+        noise_level (float): The fraction of noise to be added to x
+
+    Return:
+        x_prime (np.ndarray): The input pattern corrupted with noise
+    """
+    mask = np.full(len(x), False)
+    mask[:int(len(x)*noise_level)] = True
+    np.random.shuffle(mask)
+    x_prime = np.where(mask, -x, x).reshape((1, x.shape[0]))
+
+    return x_prime
 

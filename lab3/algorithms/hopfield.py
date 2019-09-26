@@ -11,7 +11,7 @@ class HopfieldNet:
     """The Hopfield neural network"""
     def __init__(self, max_it=100, zero_diag=False, asyn=False, all_units=False,
             energy_convergence=False, compute_energy_per_iteration=False,
-            normal_dist_W=False, symmetric_W=False):
+            normal_dist_W=False, symmetric_W=False, bias=0):
         """Class constructor
 
         Args:
@@ -29,6 +29,7 @@ class HopfieldNet:
             normal_dist_W (bool) Determines whether to initialize W to normally distributed
                                  random numbers
             symmetric_W (bool) Determines whether W should be symmetric
+            bias (float): Bias of the network
         """
         self.max_it = max_it
         self.zero_diag = zero_diag
@@ -38,6 +39,7 @@ class HopfieldNet:
         self.compute_energy_per_iteration = compute_energy_per_iteration
         self.normal_dist_W = normal_dist_W
         self.symmetric_W = symmetric_W
+        self.bias = bias
         self.W = None
 
 
@@ -118,7 +120,7 @@ class HopfieldNet:
         Sets the weight matrix W
         """
         if not self.normal_dist_W:
-            self.W = X.T@X
+            self.W = 1/X.shape[1] * X.T@X
         else:
             self.W = np.random.normal(0, 1,
                     len((X.T@X).flatten())).reshape((X.T@X).shape)
@@ -146,12 +148,12 @@ class HopfieldNet:
                     np.random.shuffle(indices)
                     # Update each unit exactly once, but in random error
                     for idx in indices:
-                        X_new[i, idx] = self.sign(x@self.W[idx])
+                        X_new[i, idx] = self.sign(x@self.W[idx] + self.bias)
                 else:
                     # Sample units with replacement and do len(x) updates
                     for _ in range(len(x)):
                         idx = np.random.randint(0, len(x))
-                        X_new[i, idx] = self.sign(x@self.W[idx])
+                        X_new[i, idx] = self.sign(x@self.W[idx] + self.bias)
 
             else:
                 X_new[i, :] = self.sign(x@self.W)

@@ -33,10 +33,7 @@ if A3_4_A:
     for i, x in enumerate(X):
         x_old = np.copy(x)
         for nl in noise_levels:
-            mask = np.full(len(x), False)
-            mask[:int(len(x)*nl)] = True
-            np.random.shuffle(mask)
-            x_prime = np.where(mask, -x, x).reshape((1, x.shape[0]))
+            x_prime = add_noise(x, nl)
             x_star = nn.recall(x_prime)
             print((f'Can p{i+1} be restored with {int(nl*100)}% noise? - '
                    f'{nn.arrays_equal(x_star, x_old)}'))
