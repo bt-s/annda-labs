@@ -13,7 +13,6 @@ import itertools
 from algorithms.hopfield import HopfieldNet
 from helper import *
 from data import *
-import time
 
 A3_4_A = True
 
@@ -29,7 +28,7 @@ if A3_4_A:
     # Train the Hopfield network on the patterns to be learned
     nn.train(X)
 
-    noise_levels = np.arange(0.1, 1.1, 0.1)
+    noise_levels = np.arange(0.01, 1, 0.01)
 
     for i, x in enumerate(X):
         x_old = np.copy(x)
