@@ -99,13 +99,12 @@ class HopfieldNet:
         Returns:
             E (float): The energy of the state
         """
-        E = 0
         if len(state.shape) > 1:
+            E = 0
             for s in state:
-                E -= (self.W[:, :]@(s[:])@s[:])
+                E -= self.W@s @ s
         else:
-            E -= (self.W[:, :]@(state[:])@state[:])
-
+            E = - self.W@state @ state
 
         return E
 
