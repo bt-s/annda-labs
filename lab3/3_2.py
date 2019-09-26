@@ -12,6 +12,7 @@ import numpy as np
 import itertools
 from algorithms.hopfield import HopfieldNet
 from helper import *
+from data import *
 
 
 A3_2_A = False

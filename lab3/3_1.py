@@ -11,29 +11,16 @@ __author__ = "Anton Anderzén, Stella Katsarou, Bas Straathof"
 import numpy as np
 import itertools
 from algorithms.hopfield import HopfieldNet
+from data import *
 
 
 A3_1_A = False
 A3_1_B = False
 A3_1_C = False
 
-# Patterns to be learned
-x1 = np.asarray([-1, -1, 1, -1, 1, -1, -1, 1]).reshape((1, 8))
-x2 = np.asarray([-1, -1, -1, -1, -1, 1, -1, -1]).reshape((1, 8))
-x3 = np.asarray([-1, 1, 1, -1, -1, 1, -1, 1]).reshape((1, 8))
-X = np.vstack([x1, x2, x3])
-
-# Distorded patterns
-x1d = np.asarray([1, -1, 1, -1, 1, -1, -1, 1]).reshape((1, 8))
-x2d = np.asarray([1, 1, -1, -1, -1, 1, -1, -1]).reshape((1, 8))
-x3d = np.asarray([1, 1, 1, -1, 1, 1, -1, 1]).reshape((1, 8))
-Xd = np.vstack([x1d, x2d, x3d])
-
-# More dissimilar inputs
-x1md = [1, 1, -1, 1, -1, -1, -1, 1] # 4 out of 8 dissimilar
-x2md = [1, 1, 1, 1, 1, 1, -1, -1]   # 5 out of 8 dissimilar
-x3md = [1, -1, -1, 1, 1, 1, -1, 1]  # 5 out of 8 dissimilar
-Xmd = np.vstack((x1md, x2md, x3md))
+X = load_X()
+Xd = load_Xd()
+Xmd = load_Xmd()
 
 # Initialize the Hopfield network
 nn = HopfieldNet(zero_diag=False)
@@ -75,5 +62,5 @@ if A3_1_C:
     # Check whether they converge to an attractor
     for x in Xmd_star:
         if tuple(x) in attractors:
-            print("Nice")
+            print("I converge to an attractor.")
 
