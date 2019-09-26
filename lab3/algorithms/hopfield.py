@@ -9,7 +9,7 @@ import numpy as np
 
 class HopfieldNet:
     """The Hopfield neural network"""
-    def __init__(self, max_it=100, zero_diag=False, asyn=False):
+    def __init__(self, max_it=100, zero_diag=False, asyn=False, all_units=False):
         """Class constructor
 
         Args:
@@ -17,10 +17,14 @@ class HopfieldNet:
             zero_diag (bool): Whether to set the diagonal of the weight
                                     matrix to all zeros
             asyn (bool): Determines whether to update asynchronously
+            all_units (bool): Determines whether all units should be updated
+                              asynchronously. If not, len(x) units are randomly
+                              sampled with replacement and updated.
         """
         self.max_it = max_it
         self.zero_diag = zero_diag
         self.asyn = asyn
+        self.all_units = all_units
         self.W = None
 
 
@@ -79,16 +83,25 @@ class HopfieldNet:
         Returns:
             X (np.ndarray): The updated X
         """
+        X_new = np.copy(X)
         for i, x in enumerate(X):
             if self.asyn:
-                for _ in range(100): # 100 is just randomly chosen
-                    idx = np.random.randint(0, len(x))
-                    X[i, idx] = self.sign(x@self.W[idx])
+                if self.all_units:
+                    indices = np.arange(len(x))
+                    np.random.shuffle(indices)
+                    # Update each unit exactly once, but in random error
+                    for idx in indices:
+                        X_new[i, idx] = self.sign(x@self.W[idx])
+                else:
+                    # Sample units with replacement and do len(x) updates
+                    for _ in range(len(x)):
+                        idx = np.random.randint(0, len(x))
+                        X_new[i, idx] = self.sign(x@self.W[idx])
 
             else:
-                X[i, :] = self.sign(x@self.W)
+                X_new[i, :] = self.sign(x@self.W)
 
-        return X
+        return X_new
 
 
     def recall(self, X):
@@ -103,13 +116,9 @@ class HopfieldNet:
         """
         for i in range(self.max_it):
             X_new = self.update_rule(X)
-            if self.asyn:
-                pass
-                # TODO: Insert convergence criterion for async updating  here
-            else:
-                if self.arrays_equal(X, X_new):
-                    print(f'It took {i} iterations to converge to fixed points.')
-                    break
+            if self.arrays_equal(X, X_new):
+                print(f'It took {i} iterations to converge to fixed points.')
+                break
 
             X = X_new
 
