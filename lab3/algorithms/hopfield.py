@@ -9,7 +9,9 @@ import numpy as np
 
 class HopfieldNet:
     """The Hopfield neural network"""
-    def __init__(self, max_it=100, zero_diag=False, asyn=False, all_units=False):
+    def __init__(self, max_it=100, zero_diag=False, asyn=False, all_units=False,
+            energy_convergence=False, compute_energy_per_iteration=False,
+            normal_dist_W=False, symmetric_W=False):
         """Class constructor
 
         Args:
@@ -20,11 +22,22 @@ class HopfieldNet:
             all_units (bool): Determines whether all units should be updated
                               asynchronously. If not, len(x) units are randomly
                               sampled with replacement and updated.
+            energy_convergence (bool): Determines whether the state's energy is used for
+                                       as a convergence criterion
+            compute_energy_per_iteration (bool) Determines whether to compute the energy
+                                                after each iteration
+            normal_dist_W (bool) Determines whether to initialize W to normally distributed
+                                 random numbers
+            symmetric_W (bool) Determines whether W should be symmetric
         """
         self.max_it = max_it
         self.zero_diag = zero_diag
         self.asyn = asyn
         self.all_units = all_units
+        self.energy_convergence = energy_convergence
+        self.compute_energy_per_iteration = compute_energy_per_iteration
+        self.normal_dist_W = normal_dist_W
+        self.symmetric_W = symmetric_W
         self.W = None
 
 
@@ -46,6 +59,21 @@ class HopfieldNet:
 
 
     @staticmethod
+    def check_symmetric(M, rtol=1e-05, atol=1e-08):
+        """Checks if matrix M is symmetric
+
+        Args:
+            M (np.ndarray): Input matrix
+            rtol (int): Relative tolerance
+            atol (int): Absolute tolerance
+
+        Returns:
+            (bool): Whether M is symmetric
+        """
+        return np.allclose(M, M.T, rtol=rtol, atol=atol)
+
+
+    @staticmethod
     def sign(X):
         """Computes the sign function
 
@@ -55,11 +83,31 @@ class HopfieldNet:
         Returns:
             (np.ndarray): Array of integers
         """
-        if type(X) == np.int64:
+        if type(X) == np.int64 or type(X) == np.float64:
             return 1 if X >= 0 else -1
 
         else:
             return np.asarray([1 if x >= 0 else -1 for x in X], dtype=int)
+
+
+    def energy(self, state):
+        """Computes the energy for a certain state
+
+        Args:
+            state (np.ndarray): A network state
+
+        Returns:
+            E (float): The energy of the state
+        """
+        E = 0
+        if len(state.shape) > 1:
+            for s in state:
+                E -= (self.W[:, :]@(s[:])@s[:])
+        else:
+            E -= (self.W[:, :]@(state[:])@state[:])
+
+
+        return E
 
 
     def train(self, X):
@@ -70,7 +118,15 @@ class HopfieldNet:
 
         Sets the weight matrix W
         """
-        self.W = np.dot(X.T, X)
+        if not self.normal_dist_W:
+            self.W = X.T@X
+        else:
+            self.W = np.random.normal(0, 1,
+                    len((X.T@X).flatten())).reshape((X.T@X).shape)
+            if self.symmetric_W:
+                self.W = 0.5 * (self.W + self.W.T)
+                assert self.check_symmetric(self.W)
+
         if self.zero_diag: np.fill_diagonal(self.W, 0)
 
 
@@ -116,9 +172,18 @@ class HopfieldNet:
         """
         for i in range(self.max_it):
             X_new = self.update_rule(X)
-            if self.arrays_equal(X, X_new):
-                print(f'It took {i} iterations to converge to fixed points.')
-                break
+
+            if self.compute_energy_per_iteration:
+                print(f'Iteration {i}, E: {self.energy(X_new)}')
+
+            if self.energy_convergence:
+                if not self.energy(X_new) < self.energy(X):
+                    print(f'It took {i} iterations to converge to fixed points.')
+                    break
+            else:
+                if self.arrays_equal(X, X_new):
+                    print(f'It took {i} iterations to converge to fixed points.')
+                    break
 
             X = X_new
 
@@ -126,4 +191,3 @@ class HopfieldNet:
             print(f'The network did not converge after {self.max_it} iterations.')
 
         return X_new
-
