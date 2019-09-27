@@ -14,13 +14,14 @@ from algorithms.hopfield import HopfieldNet
 from helper import *
 from data import *
 
-A3_4_A = True
+A3_4_A = False
 
 # Load the pictures
 images = get_pict_data('pict.dat')
 X = images[:3, :]
 
 if A3_4_A:
+    print("A3_4_A")
     # Initialize the Hopfield network with async updating
     nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
             energy_convergence=True)

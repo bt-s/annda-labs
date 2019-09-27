@@ -63,22 +63,23 @@ def get_pict_data(fname):
         return np.asarray(f.read().split(',')).reshape((11, 1024)).astype(int)
 
 
-def create_random_patterns(n, sparsity=.5):
-    """Creates n 32x32 random patterns
+def create_random_patterns(n, units=1024, sparsity=.5):
+    """Creates n random patterns of a fixed number of units (units)
 
     Args:
-        n (int): The number of random patterns
+        n (int): Number of random patterns
+        units (int): Number of units per pattern
         sparsity (float): Describes the ratio of nodes 1 vs -1
 
     Returns:
-       X np.ndarray: Containing the n random patterns
+       X np.ndarray: Containing the n random patterns of length units
     """
-    X = np.zeros((n, 1024))
+    X = np.zeros((n, units))
     for i in range(n):
-        p = np.full(1024, 1)
+        p = np.full(units, 1)
         p[:int(len(p)*sparsity)] = -1
         np.random.shuffle(p)
-        X[i] = p.reshape((1, 1024))
+        X[i] = p.reshape((1, units))
 
     return X
 
