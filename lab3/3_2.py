@@ -31,29 +31,33 @@ nn = HopfieldNet(zero_diag=True)
 nn.train(X)
 
 if A3_2_A:
+    print("A3_2_A")
     plot_images(images)
 
 if A3_2_B:
+    print("A3_2_B")
     # Sanity check that our update rule works and that the three patterns are stable
     # -  update_rule(X) should return X
-    print(nn.arrays_equal(nn.update_rule(X), X, element_wise=False))
+    print(f'Are the pattenrs stable? - {nn.arrays_equal(nn.update_rule(X), X, element_wise=False)}')
 
 if A3_2_C:
+    print("A3_2_C")
     # Update p10 and p11 to stable point convergence
     p10_star = nn.recall(images[9].reshape((1, images[9].shape[0])))
     p11_star = nn.recall(images[10].reshape((1, images[9].shape[0])))
 
     # Check whether p10 has converged to p1
-    print(nn.arrays_equal(p10_star, images[0]))
+    print(f'Did p10 converge to p1? - {nn.arrays_equal(p10_star, images[0])}')
     plot_images([p10_star])
 
     # Check whether p11 has converged to p2 or p3
-    print(nn.arrays_equal(p11_star, images[1]))
-    print(nn.arrays_equal(p11_star, images[2]))
+    print(f'Did p11 converge to p2? - {nn.arrays_equal(p11_star, images[1])}')
+    print(f'Did p11 converge to p3? - {nn.arrays_equal(p11_star, images[2])}')
     plot_images([p11_star])
 
 
 if A3_2_D:
+    print("A3_2_D")
     # Reinitialize the Hopfield network (with async updating)
     nn = HopfieldNet(zero_diag=True, asyn=True)
 
@@ -65,10 +69,10 @@ if A3_2_D:
     p11_star = nn.recall(images[10].reshape((1, images[9].shape[0])))
 
     # Check whether p10 has converged to p1
-    print(nn.arrays_equal(p10_star, images[0]))
+    print(f'Did p10 converge to p1? - {nn.arrays_equal(p10_star, images[0])}')
     plot_images([p10_star])
 
     # Check whether p11 has converged to p2 or p3
-    print(nn.arrays_equal(p11_star, images[1]))
-    print(nn.arrays_equal(p11_star, images[2]))
+    print(f'Did p11 converge to p2? - {nn.arrays_equal(p11_star, images[1])}')
+    print(f'Did p11 converge to p3? - {nn.arrays_equal(p11_star, images[2])}')
     plot_images([p11_star])

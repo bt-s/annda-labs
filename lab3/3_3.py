@@ -24,6 +24,7 @@ X = load_X()
 Xd = load_Xd()
 
 if A3_3_A:
+    print("A3_3_A")
     # Initialize the Hopfield network with async updating
     nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
             energy_convergence=True)
@@ -51,6 +52,7 @@ if A3_3_A:
     print(f'These are the various energy levels of the attractors: {set(energies)}')
 
 if A3_3_B:
+    print("A3_3_B")
     # Initialize the Hopfield network with async updating
     nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
             energy_convergence=True)
@@ -64,6 +66,7 @@ if A3_3_B:
             f'{nn.energy(xd_star)}'))
 
 if A3_3_C:
+    print("A3_3_C")
     # Initialize the Hopfield network with async updating
     nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
             energy_convergence=True, compute_energy_per_iteration=True)
@@ -77,6 +80,7 @@ if A3_3_C:
         print()
 
 if A3_3_D:
+    print("A3_3_D")
     nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
             energy_convergence=True, compute_energy_per_iteration=True,
             normal_dist_W=True)
@@ -90,6 +94,7 @@ if A3_3_D:
         print()
 
 if A3_3_E:
+    print("A3_3_E")
     nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
             energy_convergence=True, compute_energy_per_iteration=True,
             normal_dist_W=True, symmetric_W=True)

@@ -32,7 +32,18 @@ nn.train(X)
 # -  update_rule(X) should return X
 assert nn.arrays_equal(nn.update_rule(X), X)
 
+# Create an array of all possible 8-bit arrays (256, 8)
+xx = np.array([list(i) for i in itertools.product([-1, 1], repeat=8)])
+
+# Update xx up to stable point convergence (256, 8)
+xx_star = nn.recall(xx)
+xx_star = [tuple(row) for row in xx_star]
+
+# Keep all unique rows of xx_star
+attractors = np.unique(xx_star, axis=0)
+
 if A3_1_A:
+    print("A3_1_A")
     # Update Xd up to stable point convergence
     Xd_star = nn.recall(Xd)
 
@@ -40,19 +51,12 @@ if A3_1_A:
     print(nn.arrays_equal(Xd_star, X, element_wise=True))
 
 if A3_1_B:
-    # Create an array of all possible 8-bit arrays (256, 8)
-    xx = np.array([list(i) for i in itertools.product([-1, 1], repeat=8)])
-
-    # Update xx up to stable point convergence (256, 8)
-    xx_star = nn.recall(xx)
-    xx_star = [tuple(row) for row in xx_star]
-
-    # Keep all unique rows of xx_star
-    attractors = np.unique(xx_star, axis=0)
+    print("A3_1_B")
     print(f'There are {attractors.shape[0]} attractors:')
     print(attractors)
 
 if A3_1_C:
+    print("A3_1_C")
     # Update Xd up to stable point convergence
     Xmd_star = nn.recall(Xmd)
 

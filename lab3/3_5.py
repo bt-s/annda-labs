@@ -21,16 +21,28 @@ NUMBER_OF_TRAINING_IMAGES = 3
 A3_5_A = False
 A3_5_B = False
 A3_5_C = False
-A3_5_D = True
-A3_5_E = True
+A3_5_D = False
+A3_5_E = False
 
 # Initialize the Hopfield network with async updating
 nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
         energy_convergence=True)
 
 if A3_5_A:
+    print("A3_5_A")
     # Load the pictures
     images = get_pict_data('pict.dat')
+
+    # Show that storing capabilities abruptly cease to exist
+    for n_images in range(1, 8):
+        X = images[:n_images, :]
+        nn.train(X)
+        # Try to restore original patterns
+        X_star = nn.update_rule(X)
+        s = [nn.arrays_equal(xs, x) for xs, x in zip(X_star, X)]
+        print((f'For {n_images} training images of shape {X[0].shape}, '
+                f'{round(np.sum(s)/len(X)*100, 2)}% can be correctly retrieved.'))
+
     X = images[:NUMBER_OF_TRAINING_IMAGES, :]
 
     # Train the Hopfield network on the patterns to be learned
@@ -50,6 +62,19 @@ if A3_5_A:
     plot_images([p11_star])
 
 if A3_5_B:
+    print("A3_5_B")
+
+    # Show that the storing capabilities for random patterns are different
+    # TODO: try for example sparsity=0.3
+    for n_patterns in range(1, 200, 1):
+        X = create_random_patterns(n_patterns, sparsity=0.5)
+        nn.train(X)
+        # Try to restore original patterns
+        X_star = nn.update_rule(X)
+        s = [nn.arrays_equal(xs, x) for xs, x in zip(X_star, X)]
+        print((f'For {n_patterns} training images of shape {X[0].shape}, '
+                f'{round(np.sum(s)/len(X)*100, 2)}% can be correctly retrieved.'))
+
     # Generate random training patterns
     X = create_random_patterns(32)
 
@@ -67,11 +92,14 @@ if A3_5_B:
                 f'{nn.arrays_equal(x_star, x)}'))
 
 if A3_5_C:
-    num_of_units = np.arange(55, 170, 2)
+    print(("A3_5_C: What happens with the number of stable patterns as more are "
+          ("learned?")
+    num_of_patterns = np.arange(1, 40, 1)
+    units = 100
 
-    for units in num_of_units:
+    for patterns in num_of_patterns:
         # Generate random training patterns
-        X = create_random_patterns(units, sparsity=0.5)
+        X = create_random_patterns(patterns, units, sparsity=0.5)
 
         # Train the Hopfield network on 100 random patterns
         nn.train(X)
@@ -80,21 +108,25 @@ if A3_5_C:
         X_star = nn.update_rule(X)
 
         s = [nn.arrays_equal(xs, x) for xs, x in zip(X_star, X)]
-        print((f'For {units} units of shape {X[0].shape}, '
+        print((f'For {patterns} patterns of {units} units, '
                f'{round(np.sum(s)/len(X)*100, 2)}% can be correctly retrieved.'))
 
 if A3_5_D:
+    print(("A3_5_D: What happens if convergence to the pattern from a noisy "
+          "version is used?"))
     if A3_5_E:
+        print("A3_5_E: Added bias")
         # Initialize the Hopfield network with async updating and a bias
         bias = 0.05
         nn = HopfieldNet(max_it=100, zero_diag=True, asyn=True, all_units=True,
                 energy_convergence=True, bias=bias)
 
-    num_of_units = np.arange(55, 170, 2)
+    num_of_patterns = np.arange(1, 35, 1)
+    units = 100
 
-    for units in num_of_units:
+    for patterns in num_of_patterns:
         # Generate random training patterns
-        X = create_random_patterns(units, sparsity=0.5)
+        X = create_random_patterns(patterns, units, sparsity=0.5)
 
         # Train the Hopfield network on 100 random patterns
         nn.train(X)
@@ -102,12 +134,12 @@ if A3_5_D:
         # Corrupt the patterns with a little noise
         noise_level = 0.01
         X_prime = np.asarray([add_noise(x, noise_level) for \
-                x in X]).reshape((units, 1024))
+                x in X]).reshape((patterns, units))
 
         # Try to restore original patterns
         X_star = nn.recall(X_prime)
 
         s = [nn.arrays_equal(xs, x) for xs, x in zip(X_star, X)]
-        print((f'For {units} units of shape {X[0].shape}, '
+        print((f'For {patterns} patterns of {units} units, '
                f'{round(np.sum(s)/len(X)*100, 2)}% can be correctly retrieved.\n'))
 
