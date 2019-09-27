@@ -107,9 +107,9 @@ class HopfieldNet:
         if len(state.shape) > 1:
             E = 0
             for s in state:
-                E -= self.W@s @ s
+                E -= 1/2 * self.W@s @ s + np.sum(self.bias*s)
         else:
-            E = - self.W@state @ state
+            E = - self.W@state @ state + np.sum(self.bias*state)
 
         return E
 
@@ -124,8 +124,14 @@ class HopfieldNet:
         """
         self.P, self.N = X.shape[0], X.shape[1]
 
+        if self.bias != 0:
+            rho = 1 / (self.N * self.P) * np.sum(X)
+
         if not self.normal_dist_W:
-            self.W = 1/self.N * X.T@X
+            if self.bias != 0:
+                self.W =  (X.T-rho)@(X-rho)
+            else:
+                self.W = 1/self.N * X.T@X
         else:
             self.W = np.random.normal(0, 1,
                     len((X.T@X).flatten())).reshape((X.T@X).shape)
