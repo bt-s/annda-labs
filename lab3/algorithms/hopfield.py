@@ -20,14 +20,14 @@ class HopfieldNet:
                                     matrix to all zeros
             asyn (bool): Determines whether to update asynchronously
             all_units (bool): Determines whether all units should be updated
-                              asynchronously. If not, len(x) units are randomly
+                              asynchronously. If not, N units are randomly
                               sampled with replacement and updated.
-            energy_convergence (bool): Determines whether the state's energy is used for
-                                       as a convergence criterion
-            compute_energy_per_iteration (bool) Determines whether to compute the energy
-                                                after each iteration
-            normal_dist_W (bool) Determines whether to initialize W to normally distributed
-                                 random numbers
+            energy_convergence (bool): Determines whether the state's energy is
+                                       used for as a convergence criterion
+            compute_energy_per_iteration (bool) Determines whether to compute
+                                                the energy after each iteration
+            normal_dist_W (bool) Determines whether to initialize W to normally
+                                 distributed random numbers
             symmetric_W (bool) Determines whether W should be symmetric
             bias (float): Bias of the network
         """
@@ -40,7 +40,7 @@ class HopfieldNet:
         self.normal_dist_W = normal_dist_W
         self.symmetric_W = symmetric_W
         self.bias = bias
-        self.W = None
+        self.W, self.P, self.N = None, None, None
 
 
     @staticmethod
@@ -119,8 +119,10 @@ class HopfieldNet:
 
         Sets the weight matrix W
         """
+        self.P, self.N = X.shape[0], X.shape[1]
+
         if not self.normal_dist_W:
-            self.W = 1/X.shape[1] * X.T@X
+            self.W = 1/self.N * X.T@X
         else:
             self.W = np.random.normal(0, 1,
                     len((X.T@X).flatten())).reshape((X.T@X).shape)
@@ -144,15 +146,15 @@ class HopfieldNet:
         for i, x in enumerate(X):
             if self.asyn:
                 if self.all_units:
-                    indices = np.arange(len(x))
+                    indices = np.arange(self.N)
                     np.random.shuffle(indices)
                     # Update each unit exactly once, but in random error
                     for idx in indices:
                         X_new[i, idx] = self.sign(x@self.W[idx] + self.bias)
                 else:
-                    # Sample units with replacement and do len(x) updates
-                    for _ in range(len(x)):
-                        idx = np.random.randint(0, len(x))
+                    # Sample units with replacement and do N updates
+                    for _ in range(self.N):
+                        idx = np.random.randint(0, self.N)
                         X_new[i, idx] = self.sign(x@self.W[idx] + self.bias)
 
             else:
