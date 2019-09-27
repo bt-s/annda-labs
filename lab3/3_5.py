@@ -13,9 +13,6 @@ from algorithms.hopfield import HopfieldNet
 from helper import *
 from data import *
 
-import sys
-np.set_printoptions(threshold=sys.maxsize)
-
 NUMBER_OF_TRAINING_IMAGES = 3
 
 A3_5_A = False
@@ -92,8 +89,8 @@ if A3_5_B:
                 f'{nn.arrays_equal(x_star, x)}'))
 
 if A3_5_C:
-    print(("A3_5_C: What happens with the number of stable patterns as more are "
-          ("learned?")
+    print(("A3_5_C: What happens with the number of stable patterns as more are ")
+          ("learned?"))
     num_of_patterns = np.arange(1, 40, 1)
     units = 100
 
@@ -112,8 +109,8 @@ if A3_5_C:
                f'{round(np.sum(s)/len(X)*100, 2)}% can be correctly retrieved.'))
 
 if A3_5_D:
-    print(("A3_5_D: What happens if convergence to the pattern from a noisy "
-          "version is used?"))
+    print(("A3_5_D: What happens if convergence to the pattern from a noisy ")
+          ("version is used?"))
     if A3_5_E:
         print("A3_5_E: Added bias")
         # Initialize the Hopfield network with async updating and a bias
