@@ -11,7 +11,7 @@ class HopfieldNet:
     """The Hopfield neural network"""
     def __init__(self, max_it=100, zero_diag=False, asyn=False, all_units=False,
             energy_convergence=False, compute_energy_per_iteration=False,
-            normal_dist_W=False, symmetric_W=False, bias=0):
+            normal_dist_W=False, symmetric_W=False, bias=0, binary=False):
         """Class constructor
 
         Args:
@@ -30,6 +30,8 @@ class HopfieldNet:
                                  distributed random numbers
             symmetric_W (bool) Determines whether W should be symmetric
             bias (float): Bias of the network
+            binary (bool): Whether the data to be learned is binary instead of
+                           bipolar.
         """
         self.max_it = max_it
         self.zero_diag = zero_diag
@@ -40,6 +42,7 @@ class HopfieldNet:
         self.normal_dist_W = normal_dist_W
         self.symmetric_W = symmetric_W
         self.bias = bias
+        self.binary = binary
         self.W, self.P, self.N = None, None, None
 
 
@@ -150,12 +153,20 @@ class HopfieldNet:
                     np.random.shuffle(indices)
                     # Update each unit exactly once, but in random error
                     for idx in indices:
-                        X_new[i, idx] = self.sign(x@self.W[idx] + self.bias)
+                        if self.binary:
+                            X_new[i, idx] = 0.5 + 0.5 * self.sign(x@self.W[idx] \
+                                    - self.bias)
+                        else:
+                            X_new[i, idx] = self.sign(x@self.W[idx] - self.bias)
                 else:
                     # Sample units with replacement and do N updates
                     for _ in range(self.N):
                         idx = np.random.randint(0, self.N)
-                        X_new[i, idx] = self.sign(x@self.W[idx] + self.bias)
+                        if self.binary:
+                            X_new[i, idx] = 0.5 + 0.5 * self.sign(x@self.W[idx] \
+                                    - self.bias)
+                        else:
+                            X_new[i, idx] = self.sign(x@self.W[idx] - self.bias)
 
             else:
                 X_new[i, :] = self.sign(x@self.W)
