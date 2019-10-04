@@ -15,48 +15,76 @@ from util import *
 from rbm import RestrictedBoltzmannMachine
 from dbn import DeepBeliefNet
 
+PLOTS = True
+
 if __name__ == "__main__":
+    # Fix the dimensions of the images
     image_size = [28, 28]
+
+    # Load the MNIST data into numpy arrays
     train_imgs, train_lbls, test_imgs, test_lbls = read_mnist(
             dim=image_size, n_train=60000, n_test=10000)
 
-    # Restricted Boltzmann Machine
-    print ("\nStarting a Restricted Boltzmann Machine...")
+    # The labels are stored as one-hot-encoded vectors
+    # Let's also store them in digit format
+    train_lbls_digits = np.argmax(train_lbls, axis=1)
+    test_lbls_digits = np.argmax(test_lbls, axis=1)
 
-    rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
-            ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
-            n_labels=10, batch_size=10)
+    if PLOTS:
+        # Training set class histogram
+        create_histogram(train_lbls_digits, bins=19,
+                title="Class distribution of the training data",
+                ylabel="Occurences", xlabel="Class")
 
-    rbm.cd1(visible_trainset=train_imgs, n_iterations=10000)
+        # Test set class histogram
+        create_histogram(test_lbls_digits, bins=19,
+                title="Class distribution of the test data",
+                ylabel="Occurences", xlabel="Class")
 
-    # Deep Belief Net
-    print ("\nStarting a Deep Belief Net...")
+        # Visualize the first 10 digits
+        for i in range(10):
+            plot_digit(train_imgs[i], train_lbls_digits[i])
 
-    dbn = DeepBeliefNet(sizes={"vis":image_size[0]*image_size[1], "hid":500,
-        "pen":500, "top":2000, "lbl":10}, image_size=image_size, n_labels=10,
-        batch_size=10)
 
-    # Greedy layer-wise training
-    dbn.train_greedylayerwise(vis_trainset=train_imgs, lbl_trainset=train_lbls,
-            n_iterations=2000)
+    # We do not always want to run everything in this main file
+    if False:
+        # Restricted Boltzmann Machine
+        print ("\nStarting a Restricted Boltzmann Machine...")
 
-    dbn.recognize(train_imgs, train_lbls)
-    dbn.recognize(test_imgs, test_lbls)
+        rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
+                ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
+                n_labels=10, batch_size=10)
 
-    for digit in range(10):
-        digit_1hot = np.zeros(shape=(1, 10))
-        digit_1hot[0, digit] = 1
-        dbn.generate(digit_1hot, name="rbms")
+        rbm.cd1(visible_trainset=train_imgs, n_iterations=10000)
 
-    # Fine-tune wake-sleep training
-    dbn.train_wakesleep_finetune(vis_trainset=train_imgs, lbl_trainset=train_lbls,
-            n_iterations=2000)
+        # Deep Belief Net
+        print ("\nStarting a Deep Belief Net...")
 
-    dbn.recognize(train_imgs, train_lbls)
-    dbn.recognize(test_imgs, test_lbls)
+        dbn = DeepBeliefNet(sizes={"vis":image_size[0]*image_size[1], "hid":500,
+            "pen":500, "top":2000, "lbl":10}, image_size=image_size, n_labels=10,
+            batch_size=10)
 
-    for digit in range(10):
-        digit_1hot = np.zeros(shape=(1, 10))
-        digit_1hot[0, digit] = 1
-        dbn.generate(digit_1hot, name="dbn")
+        # Greedy layer-wise training
+        dbn.train_greedylayerwise(vis_trainset=train_imgs, lbl_trainset=train_lbls,
+                n_iterations=2000)
+
+        dbn.recognize(train_imgs, train_lbls)
+        dbn.recognize(test_imgs, test_lbls)
+
+        for digit in range(10):
+            digit_1hot = np.zeros(shape=(1, 10))
+            digit_1hot[0, digit] = 1
+            dbn.generate(digit_1hot, name="rbms")
+
+        # Fine-tune wake-sleep training
+        dbn.train_wakesleep_finetune(vis_trainset=train_imgs, lbl_trainset=train_lbls,
+                n_iterations=2000)
+
+        dbn.recognize(train_imgs, train_lbls)
+        dbn.recognize(test_imgs, test_lbls)
+
+        for digit in range(10):
+            digit_1hot = np.zeros(shape=(1, 10))
+            digit_1hot[0, digit] = 1
+            dbn.generate(digit_1hot, name="dbn")
 
