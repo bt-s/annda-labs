@@ -154,8 +154,10 @@ class RestrictedBoltzmannMachine():
         p_h_given_v = sigmoid(self.bias_h + np.sum(visible_minibatch*self.weight_vh)) # This looks correct
         rand_uniform = np.random.uniform(0,1)
 
-        h_activation = np.where(p_h_given_v > rand_uniform, 1,0)
 
+        # h_activation = np.where(p_h_given_v > rand_uniform, 1,0) # This is sampling the h-layer, slow.
+        h_activation = (p_h_given_v > np.random.rand(np.shape(p_h_given_v, n_samples).astype('float'))) #Same, 2xfast.
+        h_activation = sample_binary(p_h_given_v) # Pawels ready made, perfect implementation of the above line.
         return p_h_given_v, h_activation
 
 

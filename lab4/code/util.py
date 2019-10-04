@@ -45,7 +45,7 @@ def sample_binary(on_probabilities):
     """Sample activations ON=1 (OFF=0) from probabilities sigmoid probabilities
 
     Args:
-        support (np.ndarray): (size of mini-batch, size of layer)
+        on_probabilities: (np.ndarray): activation probabilities shape=(size of mini-batch, size of layer)
 
     Returns:
         (np.ndarray): activations (size of mini-batch, size of layer)
@@ -58,10 +58,10 @@ def sample_categorical(probabilities):
     """Sample one-hot activations from a categorical probabilities
 
     Args:
-        support (np.ndarray): (size of mini-batch, number of categories)
+        probabilities (np.ndarray): activation probabilities shape=(size of mini-batch, number of categories)
 
     Returns:
-        activations (np.ndarray): (size of mini-batch, number of categories)
+        activations (np.ndarray): one hot encoded argmax probability (size of mini-batch, number of categories)
     """
     cumsum = np.cumsum(probabilities,axis=1)
     rand = np.random.random_sample(size=probabilities.shape[0])[:, None]
