@@ -18,7 +18,7 @@ import numpy as np
 class RestrictedBoltzmannMachine():
     """The Restricted Boltzmann Machine"""
     def __init__(self, ndim_visible, ndim_hidden, is_bottom=False,
-            image_size=[28,28], is_top=False, n_labels=10, batch_size=10):
+            image_size=[28,28], is_top=False, n_labels=10, batch_size=20):
         """Class constructor
 
         Args:
@@ -49,11 +49,16 @@ class RestrictedBoltzmannMachine():
         self.delta_bias_v = 0
         self.delta_weight_vh = 0
         self.delta_bias_h = 0
-        self.bias_v = np.random.normal(loc=0.0, scale=0.01,
-                size=(self.ndim_visible))
+
+        # Initialize W ~ N(0, 0.01) (R^v, R^h)
         self.weight_vh = np.random.normal(loc=0.0, scale=0.01,
                 size=(self.ndim_visible,self.ndim_hidden))
 
+        # Initialize bias_v ~ N(0, 01) (R^v)
+        self.bias_v = np.random.normal(loc=0.0, scale=0.01,
+                size=(self.ndim_visible))
+
+        # Initialize bias_h ~ N(0, 01) (R^h)
         self.bias_h = np.random.normal(loc=0.0, scale=0.01,
                 size=(self.ndim_hidden))
 
@@ -76,28 +81,36 @@ class RestrictedBoltzmannMachine():
         }
 
 
-    def cd1(self, visible_trainset, n_iterations=10000):
+    def cd1(self, X, n_iterations=10000):
         """Contrastive Divergence with k=1 full alternating Gibbs sampling
 
         Args:
-            visible_trainset: training data for this rbm, shape is (size of
-                              training set, size of visible layer)
-            n_iterations: number of iterations of learning (each iteration
-                          learns a mini-batch)
+            X (np.ndarray): training data for this rbm,
+                            shape is (num_images, ndim_visible)
+            n_iterations (int): number of iterations of learning (each iteration
+                                learns a mini-batch)
+
+        Note: if using 60,000 MNIST data points with a mini-batch size of 20,
+              n_iterations=30000 means that we have 10 training epochs. Why?
+              60,000 / 20 = 3,000 iterations is one epoch.
 
         Returns ():
         """
         print ("\nLearning CD1...")
 
-        n_samples = visible_trainset.shape[0]
+        n_samples = X.shape[0]
 
         for it in range(n_iterations):
+            start = (self.batch_size * it) % n_samples
+            end = start + self.batch_size
+            X_batch = X[start:end]
+
             # Positive phase
 
             # Negative phase
 
             # Updating parameters
-            self.update_params(visible_trainset, )
+            #self.update_params(X, )
             # Visualize once in a while when visible layer is input images
 
             if it % self.rf["period"] == 0 and self.is_bottom:
@@ -108,7 +121,7 @@ class RestrictedBoltzmannMachine():
             # Print progress
             if it % self.print_period == 0:
                 print("iteration=%7d recon_loss=%4.4f" % (it,
-                    np.linalg.norm(visible_trainset - visible_trainset)))
+                    np.linalg.norm(X - X)))
 
         return
 
@@ -136,13 +149,13 @@ class RestrictedBoltzmannMachine():
         return
 
 
-    def get_h_given_v(self,visible_minibatch):
+    def get_h_given_v(self, X_batch):
         """Compute probabilities p(h=1|v) and activations h ~ p(h|v)
 
         Uses undirected weight "weight_vh" and bias "bias_h"
 
         Args:
-            visible_minibatch: shape is (size of mini-batch, size of visible layer)
+            X_batch: elf.updatshape is (size of mini-batch, size of visible layer)
 
         Returns:
             tuple ( p(h|v) , h)
@@ -150,24 +163,25 @@ class RestrictedBoltzmannMachine():
         """
         assert self.weight_vh is not None
 
-        n_samples = visible_minibatch.shape[0]
-        p_h_given_v = sigmoid(self.bias_h + np.sum(visible_minibatch*self.weight_vh)) # This looks correct
+        n_samples = X_batch.shape[0]
+        p_h_given_v = sigmoid(self.bias_h + np.sum(X_batch*self.weight_vh)) # This looks correct
         rand_uniform = np.random.uniform(0,1)
 
 
         # h_activation = np.where(p_h_given_v > rand_uniform, 1,0) # This is sampling the h-layer, slow.
         h_activation = (p_h_given_v > np.random.rand(np.shape(p_h_given_v, n_samples).astype('float'))) #Same, 2xfast.
         h_activation = sample_binary(p_h_given_v) # Pawels ready made, perfect implementation of the above line.
+
         return p_h_given_v, h_activation
 
 
-    def get_v_given_h(self,hidden_minibatch):
+    def get_v_given_h(self,H_batch):
         """Compute probabilities p(v=1|h) and activations v ~ p(v|h)
 
         Uses undirected weight "weight_vh" and bias "bias_v"
 
         Args:
-           hidden_minibatch: shape is (size of mini-batch, size of hidden layer)
+           H_batch: shape is (size of mini-batch, size of hidden layer)
 
         Returns:
            tuple ( p(v|h) , v)
@@ -176,8 +190,8 @@ class RestrictedBoltzmannMachine():
 
         assert self.weight_vh is not None
 
-        n_samples = hidden_minibatch.shape[0]
-        p_v_given_h = sigmoid(self.bias_v + np.sum(hidden_minibatch*self.weight_vh))
+        n_samples = H_batch.shape[0]
+        p_v_given_h = sigmoid(self.bias_v + np.sum(H_batch*self.weight_vh))
 
         rand_uniform = np.random.uniform(0,1)
         v_activation = np.where(p_v_given_h > rand_uniform, 1,0) # Need to do different based on self.is_top
@@ -207,13 +221,13 @@ class RestrictedBoltzmannMachine():
         self.weight_vh = None
 
 
-    def get_h_given_v_dir(self,visible_minibatch):
+    def get_h_given_v_dir(self,X_batch):
         """Compute probabilities p(h|v) and activations h ~ p(h|v)
 
         Uses directed weight "weight_v_to_h" and bias "bias_h"
 
         Args:
-           visible_minibatch: shape is (size of mini-batch, size of visible layer)
+           X_batch: shape is (size of mini-batch, size of visible layer)
 
         Returns:
            tuple ( p(h|v) , h)
@@ -221,18 +235,18 @@ class RestrictedBoltzmannMachine():
         """
         assert self.weight_v_to_h is not None
 
-        n_samples = visible_minibatch.shape[0]
+        n_samples = X_batch.shape[0]
 
         return np.zeros((n_samples,self.ndim_hidden)), np.zeros((n_samples,self.ndim_hidden))
 
 
-    def get_v_given_h_dir(self,hidden_minibatch):
+    def get_v_given_h_dir(self,H_batch):
         """Compute probabilities p(v|h) and activations v ~ p(v|h)
 
         Uses directed weight "weight_h_to_v" and bias "bias_v"
 
         Args:
-           hidden_minibatch: shape is (size of mini-batch, size of hidden layer)
+           H_batch: shape is (size of mini-batch, size of hidden layer)
 
         Returns:
            tuple ( p(v|h) , v)
@@ -241,7 +255,7 @@ class RestrictedBoltzmannMachine():
 
         assert self.weight_h_to_v is not None
 
-        n_samples = hidden_minibatch.shape[0]
+        n_samples = H_batch.shape[0]
 
         if self.is_top:
             """Here visible layer has both data and labels. Compute total input
