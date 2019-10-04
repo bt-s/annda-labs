@@ -12,6 +12,7 @@ __author__ = "Anton Anderzén, Stella Katsarou, Bas Straathof"
 
 
 from util import *
+import numpy as np
 
 
 class RestrictedBoltzmannMachine():
@@ -96,7 +97,7 @@ class RestrictedBoltzmannMachine():
             # Negative phase
 
             # Updating parameters
-
+            self.update_params(visible_trainset, )
             # Visualize once in a while when visible layer is input images
 
             if it % self.rf["period"] == 0 and self.is_bottom:
@@ -124,9 +125,9 @@ class RestrictedBoltzmannMachine():
             h_k: activities or probabilities of hidden layer
             all args have shape (size of mini-batch, size of respective layer)
         """
-        self.delta_bias_v    += 0
-        self.delta_weight_vh += 0
-        self.delta_bias_h    += 0
+        self.delta_bias_v    += self.learning_rate * (1) # This should be completed
+        self.delta_weight_vh += self.learning_rate * (v_0*h_0 - v_k*h_k)
+        self.delta_bias_h    += self.learning_rate * (1)    # This should be completed
 
         self.bias_v    += self.delta_bias_v
         self.weight_vh += self.delta_weight_vh
@@ -136,7 +137,7 @@ class RestrictedBoltzmannMachine():
 
 
     def get_h_given_v(self,visible_minibatch):
-        """Compute probabilities p(h|v) and activations h ~ p(h|v)
+        """Compute probabilities p(h=1|v) and activations h ~ p(h|v)
 
         Uses undirected weight "weight_vh" and bias "bias_h"
 
@@ -150,13 +151,16 @@ class RestrictedBoltzmannMachine():
         assert self.weight_vh is not None
 
         n_samples = visible_minibatch.shape[0]
+        p_h_given_v = sigmoid(self.bias_h + np.sum(visible_minibatch*self.weight_vh)) # This looks correct
+        rand_uniform = np.random.uniform(0,1)
 
-        return np.zeros((n_samples, self.ndim_hidden)), \
-                np.zeros((n_samples,self.ndim_hidden))
+        h_activation = np.where(p_h_given_v > rand_uniform, 1,0)
+
+        return p_h_given_v, h_activation
 
 
     def get_v_given_h(self,hidden_minibatch):
-        """Compute probabilities p(v|h) and activations v ~ p(v|h)
+        """Compute probabilities p(v=1|h) and activations v ~ p(v|h)
 
         Uses undirected weight "weight_vh" and bias "bias_v"
 
@@ -171,6 +175,10 @@ class RestrictedBoltzmannMachine():
         assert self.weight_vh is not None
 
         n_samples = hidden_minibatch.shape[0]
+        p_v_given_h = sigmoid(self.bias_v + np.sum(hidden_minibatch*self.weight_vh))
+
+        rand_uniform = np.random.uniform(0,1)
+        v_activation = np.where(p_v_given_h > rand_uniform, 1,0) # Need to do different based on self.is_top
 
         if self.is_top:
             """Here visible layer has both data and labels. Compute total input
@@ -185,8 +193,8 @@ class RestrictedBoltzmannMachine():
         else:
             pass
 
-        return np.zeros((n_samples,self.ndim_visible)), \
-                np.zeros((n_samples,self.ndim_visible))
+
+        return p_v_given_h, v_activation
 
 
     ## RBM as a belief layer: the functions below do not have to be changed
