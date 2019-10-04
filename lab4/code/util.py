@@ -162,3 +162,39 @@ def stitch_video(fig, imgs):
     """
     return animation.ArtistAnimation(fig, imgs, interval=100, blit=True,
             repeat=False)
+
+
+def create_histogram(x, bins, title="", xlabel="", ylabel="",
+        normalized=False, fname="", save_fig=False):
+    """Plots a histogram
+
+    Args:
+        x (np.ndarray OR list): Input to be plotted
+        bins (int): Number of bins
+        title (str)
+        xlabel (str)
+        ylabel (str)
+        normalized (bool): Whether to normalize the y-axis
+        fname (str): File name for saving
+        save_fig (bool): Whether to save the plot
+    """
+    plt.hist(x, density=normalized, bins=bins)
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    if save_fig: plt.savefig(fname)
+    plt.show()
+
+
+def plot_digit(d_arr, label):
+    """Plot a handwritten digit based on its numpy array
+
+    Args:
+        d_arr (np.ndarray): The array representing the digit
+        label (int): The label of the handwritten digit
+    """
+    two_d = (np.reshape(d_arr, (28, 28)) * 255).astype(np.uint8)
+    plt.imshow(two_d, cmap='gray', interpolation='nearest')
+    plt.title(f'Digit: {label}')
+    plt.show()
+
