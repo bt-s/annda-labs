@@ -105,6 +105,11 @@ class RestrictedBoltzmannMachine():
             end = start + self.batch_size
             X_batch = X[start:end]
 
+            # Not too sure about the line below; but what else should h0 be?
+            # h0 should be of equal shape as h_activation...
+            if it == 0:
+                _, H_batch = self.get_h_given_v(X_batch)
+
             # Positive phase
             p_h_given_v, h_activation  = self.get_h_given_v(X_batch)
 
@@ -112,7 +117,8 @@ class RestrictedBoltzmannMachine():
             p_v_given_h, v_activation  = self.get_v_given_h(h_activation)
 
             # Updating parameters
-            #self.update_params(X, )
+            self.update_params(X_batch, H_batch, v_activation, h_activation)
+
             # Visualize once in a while when visible layer is input images
 
             if it % self.rf["period"] == 0 and self.is_bottom:
@@ -140,15 +146,21 @@ class RestrictedBoltzmannMachine():
             h_k: activities or probabilities of hidden layer
             all args have shape (size of mini-batch, size of respective layer)
         """
-        self.delta_bias_v    += self.learning_rate * (1) # This should be completed
-        self.delta_weight_vh += self.learning_rate * (v_0*h_0 - v_k*h_k)
-        self.delta_bias_h    += self.learning_rate * (1)    # This should be completed
+        self.delta_bias_v += self.learning_rate * np.mean(v_0 - v_k, axis=0)
+        self.delta_weight_vh += self.learning_rate * \
+                (np.dot(v_0.T, h_0) - np.dot(v_k.T, h_k))
+
+        self.delta_bias_h += self.learning_rate * np.mean(h_0 - h_k, axis=0)
+
+        # Sanity checks: the gradients of W and the biases should be of the same
+        # shape as W and the biases
+        assert self.bias_v.shape == self.delta_bias_v.shape
+        assert self.weight_vh.shape == self.delta_weight_vh.shape
+        assert self.bias_h.shape == self.delta_bias_h.shape
 
         self.bias_v    += self.delta_bias_v
         self.weight_vh += self.delta_weight_vh
         self.bias_h    += self.delta_bias_h
-
-        return
 
 
     def get_h_given_v(self, X_batch):
