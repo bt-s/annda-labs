@@ -106,6 +106,7 @@ class RestrictedBoltzmannMachine():
             X_batch = X[start:end]
 
             # Positive phase
+            p_h_given_v, h_activation  = self.get_h_given_v(X_batch)
 
             # Negative phase
 
@@ -150,27 +151,21 @@ class RestrictedBoltzmannMachine():
 
 
     def get_h_given_v(self, X_batch):
-        """Compute probabilities p(h=1|v) and activations h ~ p(h|v)
+        """Compute probabilities p(h=1|v) and activations h ~ p(h=1|v)
 
         Uses undirected weight "weight_vh" and bias "bias_h"
 
         Args:
-            X_batch: elf.updatshape is (size of mini-batch, size of visible layer)
+            X_batch: shape is (size of mini-batch, size of visible layer)
 
         Returns:
-            tuple ( p(h|v) , h)
-            both are shaped (size of mini-batch, size of hidden layer)
+            p_h_given_v (np.ndarray): p(h=1|v) of shape
+                                      (size mini-batch, size hidden layer)
+            h_activation (np.ndarray): Activations of the hidden layer of shape
+                                       (size mini-batch, size hidden layer)
         """
-        assert self.weight_vh is not None
-
-        n_samples = X_batch.shape[0]
-        p_h_given_v = sigmoid(self.bias_h + np.sum(X_batch*self.weight_vh)) # This looks correct
-        rand_uniform = np.random.uniform(0,1)
-
-
-        # h_activation = np.where(p_h_given_v > rand_uniform, 1,0) # This is sampling the h-layer, slow.
-        h_activation = (p_h_given_v > np.random.rand(np.shape(p_h_given_v, n_samples).astype('float'))) #Same, 2xfast.
-        h_activation = sample_binary(p_h_given_v) # Pawels ready made, perfect implementation of the above line.
+        p_h_given_v = sigmoid(self.bias_h + np.dot(X_batch, self.weight_vh))
+        h_activation = sample_binary(p_h_given_v)
 
         return p_h_given_v, h_activation
 
