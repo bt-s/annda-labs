@@ -109,6 +109,7 @@ class RestrictedBoltzmannMachine():
             p_h_given_v, h_activation  = self.get_h_given_v(X_batch)
 
             # Negative phase
+            p_v_given_h, v_activation  = self.get_v_given_h(h_activation)
 
             # Updating parameters
             #self.update_params(X, )
@@ -170,8 +171,8 @@ class RestrictedBoltzmannMachine():
         return p_h_given_v, h_activation
 
 
-    def get_v_given_h(self,H_batch):
-        """Compute probabilities p(v=1|h) and activations v ~ p(v|h)
+    def get_v_given_h(self, H_batch):
+        """Compute probabilities p(v=1|h) and activations v ~ p(v=1|h)
 
         Uses undirected weight "weight_vh" and bias "bias_v"
 
@@ -179,31 +180,25 @@ class RestrictedBoltzmannMachine():
            H_batch: shape is (size of mini-batch, size of hidden layer)
 
         Returns:
-           tuple ( p(v|h) , v)
-           both are shaped (size of mini-batch, size of visible layer)
+           p_v_given_h (np.ndarray): p(v=1|h) of shape
+                                     (size mini-batch, size hidden layer)
+           v_activation (np.ndarray): Activations of the visual layer of shape
+                                      (size mini-batch, size hidden layer)
         """
-
-        assert self.weight_vh is not None
-
-        n_samples = H_batch.shape[0]
-        p_v_given_h = sigmoid(self.bias_v + np.sum(H_batch*self.weight_vh))
-
-        rand_uniform = np.random.uniform(0,1)
-        v_activation = np.where(p_v_given_h > rand_uniform, 1,0) # Need to do different based on self.is_top
+        p_v_given_h = sigmoid(self.bias_v + np.dot(H_batch, self.weight_vh.T))
 
         if self.is_top:
             """Here visible layer has both data and labels. Compute total input
-            for each unit (identical for both cases), and split into two parts, \
-            something like support[:, :-self.n_labels] and support[:, -self.n_labels:]. \
+            for each unit (identical for both cases), and split into two parts,
+            something like support[:, :-self.n_labels] and support[:, -self.n_labels:].
             Then, for both parts, use the appropriate activation function to get
-            probabilities and a sampling method to get activities. The \
-            probabilities as well as activities can then be concatenated back \
+            probabilities and a sampling method to get activities. The
+            probabilities as well as activities can then be concatenated back
             into a normal visible layer."""
             pass
 
         else:
-            pass
-
+            v_activation = sample_binary(p_v_given_h)
 
         return p_v_given_h, v_activation
 
