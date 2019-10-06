@@ -105,12 +105,20 @@ class RestrictedBoltzmannMachine():
             end = start + self.batch_size
             X_batch = X[start:end]
 
+            # Not too sure about the line below; but what else should h0 be?
+            # h0 should be of equal shape as h_activation...
+            if it == 0:
+                _, H_batch = self.get_h_given_v(X_batch)
+
             # Positive phase
+            p_h_given_v, h_activation  = self.get_h_given_v(X_batch)
 
             # Negative phase
+            p_v_given_h, v_activation  = self.get_v_given_h(h_activation)
 
             # Updating parameters
-            #self.update_params(X, )
+            self.update_params(X_batch, H_batch, v_activation, h_activation)
+
             # Visualize once in a while when visible layer is input images
 
             if it % self.rf["period"] == 0 and self.is_bottom:
@@ -138,45 +146,45 @@ class RestrictedBoltzmannMachine():
             h_k: activities or probabilities of hidden layer
             all args have shape (size of mini-batch, size of respective layer)
         """
-        self.delta_bias_v    += self.learning_rate * (1) # This should be completed
-        self.delta_weight_vh += self.learning_rate * (v_0*h_0 - v_k*h_k)
-        self.delta_bias_h    += self.learning_rate * (1)    # This should be completed
+        self.delta_bias_v += self.learning_rate * np.mean(v_0 - v_k, axis=0)
+        self.delta_weight_vh += self.learning_rate * \
+                (np.dot(v_0.T, h_0) - np.dot(v_k.T, h_k))
+
+        self.delta_bias_h += self.learning_rate * np.mean(h_0 - h_k, axis=0)
+
+        # Sanity checks: the gradients of W and the biases should be of the same
+        # shape as W and the biases
+        assert self.bias_v.shape == self.delta_bias_v.shape
+        assert self.weight_vh.shape == self.delta_weight_vh.shape
+        assert self.bias_h.shape == self.delta_bias_h.shape
 
         self.bias_v    += self.delta_bias_v
         self.weight_vh += self.delta_weight_vh
         self.bias_h    += self.delta_bias_h
 
-        return
-
 
     def get_h_given_v(self, X_batch):
-        """Compute probabilities p(h=1|v) and activations h ~ p(h|v)
+        """Compute probabilities p(h=1|v) and activations h ~ p(h=1|v)
 
         Uses undirected weight "weight_vh" and bias "bias_h"
 
         Args:
-            X_batch: elf.updatshape is (size of mini-batch, size of visible layer)
+            X_batch: shape is (size of mini-batch, size of visible layer)
 
         Returns:
-            tuple ( p(h|v) , h)
-            both are shaped (size of mini-batch, size of hidden layer)
+            p_h_given_v (np.ndarray): p(h=1|v) of shape
+                                      (size mini-batch, size hidden layer)
+            h_activation (np.ndarray): Activations of the hidden layer of shape
+                                       (size mini-batch, size hidden layer)
         """
-        assert self.weight_vh is not None
-
-        n_samples = X_batch.shape[0]
-        p_h_given_v = sigmoid(self.bias_h + np.sum(X_batch*self.weight_vh)) # This looks correct
-        rand_uniform = np.random.uniform(0,1)
-
-
-        # h_activation = np.where(p_h_given_v > rand_uniform, 1,0) # This is sampling the h-layer, slow.
-        h_activation = (p_h_given_v > np.random.rand(np.shape(p_h_given_v, n_samples).astype('float'))) #Same, 2xfast.
-        h_activation = sample_binary(p_h_given_v) # Pawels ready made, perfect implementation of the above line.
+        p_h_given_v = sigmoid(self.bias_h + np.dot(X_batch, self.weight_vh))
+        h_activation = sample_binary(p_h_given_v)
 
         return p_h_given_v, h_activation
 
 
-    def get_v_given_h(self,H_batch):
-        """Compute probabilities p(v=1|h) and activations v ~ p(v|h)
+    def get_v_given_h(self, H_batch):
+        """Compute probabilities p(v=1|h) and activations v ~ p(v=1|h)
 
         Uses undirected weight "weight_vh" and bias "bias_v"
 
@@ -184,31 +192,25 @@ class RestrictedBoltzmannMachine():
            H_batch: shape is (size of mini-batch, size of hidden layer)
 
         Returns:
-           tuple ( p(v|h) , v)
-           both are shaped (size of mini-batch, size of visible layer)
+           p_v_given_h (np.ndarray): p(v=1|h) of shape
+                                     (size mini-batch, size hidden layer)
+           v_activation (np.ndarray): Activations of the visual layer of shape
+                                      (size mini-batch, size hidden layer)
         """
-
-        assert self.weight_vh is not None
-
-        n_samples = H_batch.shape[0]
-        p_v_given_h = sigmoid(self.bias_v + np.sum(H_batch*self.weight_vh))
-
-        rand_uniform = np.random.uniform(0,1)
-        v_activation = np.where(p_v_given_h > rand_uniform, 1,0) # Need to do different based on self.is_top
+        p_v_given_h = sigmoid(self.bias_v + np.dot(H_batch, self.weight_vh.T))
 
         if self.is_top:
             """Here visible layer has both data and labels. Compute total input
-            for each unit (identical for both cases), and split into two parts, \
-            something like support[:, :-self.n_labels] and support[:, -self.n_labels:]. \
+            for each unit (identical for both cases), and split into two parts,
+            something like support[:, :-self.n_labels] and support[:, -self.n_labels:].
             Then, for both parts, use the appropriate activation function to get
-            probabilities and a sampling method to get activities. The \
-            probabilities as well as activities can then be concatenated back \
+            probabilities and a sampling method to get activities. The
+            probabilities as well as activities can then be concatenated back
             into a normal visible layer."""
             pass
 
         else:
-            pass
-
+            v_activation = sample_binary(p_v_given_h)
 
         return p_v_given_h, v_activation
 
