@@ -17,59 +17,6 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 
-def sigmoid(support):
-    """ Sigmoid activation function that finds probabilities to turn ON each unit
-
-    Args:
-        support (np.ndarray): (size of mini-batch, size of layer)
-
-    Returns:
-        (np.ndarray): on_probabilities (size of mini-batch, size of layer)
-    """
-    return 1. / (1. + np.exp(-support))
-
-
-def softmax(support):
-    """Softmax activation function that finds probabilities of each category
-
-    Args:
-        support (np.ndarray): (size of mini-batch, number of categories)
-
-    Returns:
-        (np.ndarray): on_probabilities (size of mini-batch, number of categories)
-    """
-    return np.exp(support - np.sum(support, axis=1)[:, None])
-
-
-def sample_binary(on_probabilities):
-    """Sample activations ON=1 (OFF=0) from probabilities sigmoid probabilities
-
-    Args:
-        on_probabilities: (np.ndarray): activation probabilities shape=(size of mini-batch, size of layer)
-
-    Returns:
-        (np.ndarray): activations (size of mini-batch, size of layer)
-    """
-    return 1. * (on_probabilities >= np.random.random_sample(
-        size=on_probabilities.shape))
-
-
-def sample_categorical(probabilities):
-    """Sample one-hot activations from a categorical probabilities
-
-    Args:
-        probabilities (np.ndarray): activation probabilities shape=(size of mini-batch, number of categories)
-
-    Returns:
-        activations (np.ndarray): one hot encoded argmax probability (size of mini-batch, number of categories)
-    """
-    cumsum = np.cumsum(probabilities,axis=1)
-    rand = np.random.random_sample(size=probabilities.shape[0])[:, None]
-    activations = np.zeros(probabilities.shape)
-    activations[range(probabilities.shape[0]),
-            np.argmax((cumsum >= rand), axis=1)] = 1
-    return activations
-
 
 def load_idxfile(filename):
     """Load idx file format.
