@@ -140,19 +140,42 @@ class DeepBeliefNet():
             print ("training vis--hid")
 
             # CD-1 training for vis--hid
+            self.rbm_stack["vis--hid"].cd1(vis_trainset ,n_iterations=n_iterations)
+
             self.savetofile_rbm(loc="trained_rbm",name="vis--hid")
 
             print ("training hid--pen")
+
+            # Initialize the weights of hid--pen to the learned vis--hid weights before untwining.
+            """
+            ' To guarantee that the generative model is improved by greedily learning more layers,
+             it is convenient to consider models in which all layers are the same size so that 
+             the higherlevel weights can be initialized to the values learned before
+             they are untied from the weights in the layer below. '
+            """
+            self.rbm_stack["hid--pen"].weight_vh = self.rbm_stack["vis--hid"].weight_vh
+            self.rbm_stack["hid--pen"].weight_v_to_h = self.rbm_stack["vis--hid"].weight_v_to_h
+            self.rbm_stack["hid--pen"].weight_h_to_v = self.rbm_stack["vis--hid"].weight_h_to_v
+
+            # Untwine weights
             self.rbm_stack["vis--hid"].untwine_weights()
 
             # CD-1 training for hid--pen
+            self.rbm_stack["vis--hid"].cd1(vis_trainset, n_iterations=n_iterations)
             self.savetofile_rbm(loc="trained_rbm",name="hid--pen")
 
             print ("training pen+lbl--top")
+
+            # Initialize the weights of pen+lbl--top to the learned hid--pen weights before untwining.
+            self.rbm_stack["pen+lbl--top"].weight_vh = self.rbm_stack["hid--pen"].weight_vh
+            self.rbm_stack["pen+lbl--top"].weight_v_to_h = self.rbm_stack["hid--pen"].weight_v_to_h
+            self.rbm_stack["pen+lbl--top"].weight_h_to_v = self.rbm_stack["hid--pen"].weight_h_to_v
+
             self.rbm_stack["hid--pen"].untwine_weights()
 
             # CD-1 training for pen+lbl--top
-            self.savetofile_rbm(loc="trained_rbm",name="pen+lbl--top")
+            self.rbm_stack["pen+lbl--top"].cd1(np.hstack(vis_trainset,lbl_trainset), n_iterations=n_iterations)
+            self.savetofile_rbm(loc="trained_rbm", name="pen+lbl--top")
 
         return
 
