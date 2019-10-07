@@ -50,11 +50,9 @@ if __name__ == "__main__":
     print ("\nStarting a Restricted Boltzmann Machine...")
 
     rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
-            ndim_hidden=500, is_bottom=True, image_size=image_size, is_top=False,
-            n_labels=10, batch_size=20)
+            ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
+            n_labels=10, batch_size=20, learning_rate=0.1)
 
-    # First train on the first 400 images
-    train_imgs = train_imgs[:400, :]
     rbm.cd1(X=train_imgs, n_iterations=30000)
 
     # We do not always want to run everything in this main file
