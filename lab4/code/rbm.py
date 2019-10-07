@@ -26,14 +26,22 @@ class RestrictedBoltzmannMachine():
         Args:
             ndim_visible (int): Number of units in visible layer
             ndim_hidden  (int): Number of units in hidden layer
+            is_bottom   (bool): True only if this RBM is at the bottom of the
+                                stack in a deep belief net. Used to interpret
+                                visible layer as image data with dimensions
+                                "image_size"
             image_size  (list): Image dimension for visible layer
+            is_top      (bool): True only if this RBM is at the top of stack in
+                                deep belief net. Used to interpret visible layer
+                                as concatenated with "n_label" unit of label
+                                data at the end
             n_label      (int): Number of label categories
             batch_size   (int): Size of mini-batch
             learning_rate (float)
         """
 
-        self.ndim_visible = ndim_visible
-        self.ndim_hidden = ndim_hidden
+        self.ndim_visible, self.ndim_hidden = ndim_visible, ndim_hidden
+        self.is_bottom, self.is_top = is_bottom, is_top
         self.batch_size = batch_size
 
         # Initialize W ~ N(0, 0.01) (R^v, R^h)
@@ -48,6 +56,7 @@ class RestrictedBoltzmannMachine():
         self.bias_h = np.random.normal(loc=0.0, scale=0.01,
                 size=(self.ndim_hidden))
 
+        self.momentum = 0.7
         self.learning_rate = learning_rate
         self.image_size = image_size
 
@@ -156,30 +165,22 @@ class RestrictedBoltzmannMachine():
             X_batch = X[mb_start:mb_end]
 
             # Activate and sample hidden units based on mini-batch data
-            ph_prob = self._sigmoid(self.bias_h + np.dot(X_batch,
-                self.weight_vh))
-            ph_state = self._sample_binary(ph_prob)
+            ph_prob, ph_state = self.get_h_given_v(X_batch)
 
             # Activate and sample visible units based on hidden state
-            v_prob = self._sigmoid(self.bias_v + np.dot(ph_state,
-                self.weight_vh.T))
-            v_state = self._sample_binary(v_prob)
+            v_prob, v_state = self.get_v_given_h(ph_state)
 
+            # Combine to reconstruct the full data matrix
             V[mb_start:mb_end, :] = v_prob
 
             # Activate and sample hidden units again, based on generated visible
             # state
-            nh_prob = self._sigmoid(self.bias_h + np.dot(v_state,
-                self.weight_vh))
+            nh_prob, _ = self.get_h_given_v(v_state)
 
             # Updating parameters
-            self.weight_vh += self.learning_rate * (np.dot(X_batch.T,
-                ph_prob) - np.dot(v_state.T, nh_prob))
-            self.bias_v += self.learning_rate * np.mean(
-                    X_batch - v_state, axis=0)
-            self.bias_h += self.learning_rate * np.mean(
-                ph_prob - nh_prob, axis=0)
+            self.update_params(X_batch, ph_prob, v_state, nh_prob)
 
+            # Monitor the updates
             if it % n_it_per_mb == 0:
                 end = time.time()
                 print((f'At epoch={epoch}, the reconstruction error is: '
@@ -203,59 +204,73 @@ class RestrictedBoltzmannMachine():
                 epoch += 1
 
 
-            # Print progress
-            #if it % self.print_period == 0:
-                #print("iteration=%7d recon_loss=%4.4f" % (it,
-                    #np.linalg.norm(X - V)))
+    def update_params(self, v0, h0, v1, h1):
+        """Update the weight and bias parameters
 
-    ## RBM as a belief layer: the functions below do not have to be changed
-    # until running a deep belief net
+        Args:
+            v0: activities or probabilities of visible layer input
+            h0: activities or probabilities of hidden layer input
+            v1: activities or probabilities of visible layer output
+            h1: activities or probabilities of hidden layer output
+
+        Note: All args have shape (size of mini-batch, size of respective layer)
+        Note: You could also add weight decay and momentum for weight updates.
+        """
+        self.weight_vh += self.learning_rate * (np.dot(v0.T,
+            h0) - np.dot(v1.T, h1))
+        self.bias_v += self.learning_rate * np.mean(
+                v0 - v1, axis=0)
+        self.bias_h += self.learning_rate * np.mean(
+            h0 - h1, axis=0)
+
+
     def untwine_weights(self):
-        self.weight_v_to_h = np.copy( self.weight_vh )
-        self.weight_h_to_v = np.copy( np.transpose(self.weight_vh) )
+        """Decouple weight matrix"""
+        self.weight_v_to_h = np.copy(self.weight_vh)
+        self.weight_h_to_v = np.copy(self.weight_vh.T)
         self.weight_vh = None
 
 
-    def get_h_given_v_dir(self,X_batch):
+    def get_h_given_v(self, X_batch, directed=False):
         """Compute probabilities p(h|v) and activations h ~ p(h|v)
 
-        Uses directed weight "weight_v_to_h" and bias "bias_h"
 
         Args:
-           X_batch: shape is (size of mini-batch, size of visible layer)
+            X_batch (np.ndarray): (size of mini-batch, size of visible layer)
+            directed (bool): Whether to use weight_v_to_h or weight_vh
 
         Returns:
-           tuple ( p(h|v) , h)
-           both are shaped (size of mini-batch, size of hidden layer)
+            Returns:
+            h_prob (np.ndarray): p(h=1|v) (size mini-batch, size hidden layer)
+            h_state (np.ndarray): State of the hidden layer of shape
+                                  (size mini-batch, size hidden layer)
         """
-        assert self.weight_v_to_h is not None
+        if not directed:
+            h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_vh))
+        else:
+            h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_v_to_h))
 
-        n_samples = X_batch.shape[0]
+        h_state = self._sample_binary(h_prob)
 
-        return np.zeros((n_samples,self.ndim_hidden)), np.zeros((n_samples,self.ndim_hidden))
+        return h_prob, h_state
 
 
-    def get_v_given_h_dir(self,H_batch):
+    def get_v_given_h(self, H_batch, directed=False):
         """Compute probabilities p(v|h) and activations v ~ p(v|h)
-
-        Uses directed weight "weight_h_to_v" and bias "bias_v"
 
         Args:
            H_batch: shape is (size of mini-batch, size of hidden layer)
+            directed (bool): Whether to use weight_h_to_v or weight_vh
 
         Returns:
-           tuple ( p(v|h) , v)
-           both are shaped (size of mini-batch, size of visible layer)
+           v_prob (np.ndarray): p(v=1|h) (size mini-batch, size hidden layer)
+           v_state (np.ndarray): State of the visual layer of shape
+                                 (size mini-batch, size hidden layer)
         """
-
-        assert self.weight_h_to_v is not None
-
-        n_samples = H_batch.shape[0]
-
         if self.is_top:
             """Here visible layer has both data and labels. Compute total input
             for each unit (identical for both cases), and split into two parts,
-            something like support[:, :-self.n_labels] and support[:, -self.n_labels:]. \
+            something like support[:, :-self.n_labels] and support[:, -self.n_labels:].
             Then, for both parts, use the appropriate activation function to get
             probabilities and a sampling method to get activities. The
             probabilities as well as activities can then be concatenated back
@@ -264,8 +279,14 @@ class RestrictedBoltzmannMachine():
             pass
 
         else:
-            pass
+            if not directed:
+                v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
+                    self.weight_vh.T))
+            else:
+                v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
+                    self.weight_h_to_v))
 
-        return np.zeros((n_samples,self.ndim_visible)), \
-                np.zeros((n_samples,self.ndim_visible))
+            v_state = self._sample_binary(v_prob)
+
+        return v_prob, v_state
 
