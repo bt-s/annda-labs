@@ -15,7 +15,7 @@ from util import *
 from rbm import RestrictedBoltzmannMachine
 from dbn import DeepBeliefNet
 
-PLOTS = True
+PLOTS = False
 
 if __name__ == "__main__":
     # Fix the dimensions of the images
@@ -46,17 +46,17 @@ if __name__ == "__main__":
             plot_digit(train_imgs[i], train_lbls_digits[i])
 
 
+    # Restricted Boltzmann Machine
+    print ("\nStarting a Restricted Boltzmann Machine...")
+
+    rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
+            ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
+            n_labels=10, batch_size=20, learning_rate=0.1)
+
+    rbm.cd1(X=train_imgs, n_iterations=30000)
+
     # We do not always want to run everything in this main file
     if False:
-        # Restricted Boltzmann Machine
-        print ("\nStarting a Restricted Boltzmann Machine...")
-
-        rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
-                ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
-                n_labels=10, batch_size=10)
-
-        rbm.cd1(visible_trainset=train_imgs, n_iterations=10000)
-
         # Deep Belief Net
         print ("\nStarting a Deep Belief Net...")
 
