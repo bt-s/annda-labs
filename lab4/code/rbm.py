@@ -43,6 +43,7 @@ class RestrictedBoltzmannMachine():
         self.ndim_visible, self.ndim_hidden = ndim_visible, ndim_hidden
         self.is_bottom, self.is_top = is_bottom, is_top
         self.batch_size = batch_size
+        self.n_labels = n_labels
 
         # Initialize W ~ N(0, 0.01) (R^v, R^h)
         self.weight_vh = np.random.normal(loc=0.0, scale=0.01,
@@ -59,6 +60,9 @@ class RestrictedBoltzmannMachine():
         self.momentum = 0.7
         self.learning_rate = learning_rate
         self.image_size = image_size
+
+        # In DBNs we sometimes want to return the hidden layer
+        self.H = None
 
         # Receptive-fields, only applicable when visible layer is input data
         self.rf = {
@@ -112,7 +116,7 @@ class RestrictedBoltzmannMachine():
 
     @staticmethod
     def _sample_categorical(probabilities):
-        """Sample one-hot activations from a categorical probabilities
+        """Sample one-hot activations from categorical probabilities
 
         Args:
             probabilities (np.ndarray): activation probabilities shape of
@@ -122,7 +126,7 @@ class RestrictedBoltzmannMachine():
             activations (np.ndarray): one hot encoded argmax probability
                                       (size of mini-batch, number of categories)
         """
-        cumsum = np.cumsum(probabilities,axis=1)
+        cumsum = np.cumsum(probabilities, axis=1)
         rand = np.random.random_sample(size=probabilities.shape[0])[:, None]
         activations = np.zeros(probabilities.shape)
         activations[range(probabilities.shape[0]),
@@ -145,15 +149,15 @@ class RestrictedBoltzmannMachine():
 
         Returns ():
         """
-        print ("\nLearning CD1...")
-
-        n_samples = X.shape[0]
-
-        n_it_per_mb = n_samples / self.batch_size
-
-        # Construct a full regeneration of the input
-        V = np.zeros(X.shape)
         epoch = 0
+        n_samples = X.shape[0]
+        n_it_per_epoch = n_samples / self.batch_size
+        n_epochs = n_iterations / n_it_per_epoch
+
+        print(f'\n> Learning CD1 for {n_epochs} epochs...')
+
+        # We want to regenerate the complete visual and hidden layers
+        V, self.H = np.zeros(X.shape), np.zeros((n_samples, self.ndim_hidden))
 
         # Start timing
         start = time.time()
@@ -177,19 +181,28 @@ class RestrictedBoltzmannMachine():
             # state
             nh_prob, _ = self.get_h_given_v(v_state)
 
+            # Reconstruct the complete hidden layer only during the last epoch
+            if epoch == n_epochs-1:
+               self.H[mb_start:mb_end, :] = nh_prob
+
             # Updating parameters
             self.update_params(X_batch, ph_prob, v_state, nh_prob)
 
             # Monitor the updates
-            if it % n_it_per_mb == 0:
+            if it % n_it_per_epoch == 0:
                 end = time.time()
-                print((f'At epoch={epoch}, the reconstruction error is: '
-                       f'{round(np.linalg.norm(X - V), 2)}'))
+                if self.is_top:
+                    print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
+                        f'{round(np.linalg.norm(X[:, :-10] - V[:, :-10]), 2)}'))
+                else:
+                    print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
+                        f'{round(np.linalg.norm(X - V), 2)}'))
 
                 # Visualize once in a while when visible layer is input images
-                viz_rf(weights=self.weight_vh[:, self.rf["ids"]].reshape(
-                    (self.image_size[0], self.image_size[1], -1)), it=it,
-                    grid=self.rf["grid"])
+                if self.is_bottom:
+                    viz_rf(weights=self.weight_vh[:, self.rf["ids"]].reshape(
+                        (self.image_size[0], self.image_size[1], -1)), it=it,
+                        grid=self.rf["grid"])
 
                 if it != 0:
                     print(f'This epoch took {round(end - start, 2)} seconds to run.\n')
@@ -268,15 +281,22 @@ class RestrictedBoltzmannMachine():
                                  (size mini-batch, size hidden layer)
         """
         if self.is_top:
-            """Here visible layer has both data and labels. Compute total input
-            for each unit (identical for both cases), and split into two parts,
-            something like support[:, :-self.n_labels] and support[:, -self.n_labels:].
-            Then, for both parts, use the appropriate activation function to get
-            probabilities and a sampling method to get activities. The
-            probabilities as well as activities can then be concatenated back
-            into a normal visible layer.
-            """
-            pass
+            # Separate H_batch into the data support and labels support
+            support = self.bias_v + np.dot(H_batch, self.weight_vh.T)
+            support_data = support[:, :-self.n_labels]
+            support_labels = support[:, -self.n_labels:]
+
+            # Activate and sample for the data
+            v_prob_data = self._sigmoid(support_data)
+            v_state_data = self._sample_binary(v_prob_data)
+
+            # Activate and sample for the labels
+            v_prob_labels = self._softmax(support_labels)
+            v_state_labels = self._sample_categorical(v_prob_labels)
+
+            # Concatenate into a normal visible layer
+            v_prob = np.hstack((v_prob_data, v_prob_labels))
+            v_state = np.hstack((v_state_data, v_state_labels))
 
         else:
             if not directed:
