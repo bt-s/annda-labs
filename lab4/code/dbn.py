@@ -243,9 +243,12 @@ class DeepBeliefNet():
             loc (str): The location of the file
             name (str): Name of RBM
         """
-        self.rbm_stack[name].weight_vh = np.load(f"{loc}/rbm.{name}.weight_vh.npy")
-        self.rbm_stack[name].bias_v    = np.load(f"{loc}/rbm.{name}.bias_v.npy")
-        self.rbm_stack[name].bias_h    = np.load(f"{loc}/rbm.{name}.bias_h.npy")
+        self.rbm_stack[name].weight_vh = np.load(f"{loc}/rbm.{name}.weight_vh.npy",
+                allow_pickle=True)
+        self.rbm_stack[name].bias_v    = np.load(f"{loc}/rbm.{name}.bias_v.npy",
+                allow_pickle=True)
+        self.rbm_stack[name].bias_h    = np.load(f"{loc}/rbm.{name}.bias_h.npy",
+                allow_pickle=True)
         print(f"Loaded rbm[{name}] from {loc}.")
 
 
@@ -268,9 +271,12 @@ class DeepBeliefNet():
             loc (str): The location of the file
             name (str): Name of RBM
         """
-        self.rbm_stack[name].weight_v_to_h = np.load(f"{loc}/dbn.{name}.weight_v_to_h.npy")
-        self.rbm_stack[name].weight_h_to_v = np.load(f"{loc}/dbn.{name}.weight_h_to_v.npy")
-        self.rbm_stack[name].bias_v        = np.load(f"{loc}/dbn.{name}.bias_v.npy")
+        self.rbm_stack[name].weight_v_to_h = np.load(f"{loc}/dbn.{name}.weight_v_to_h.npy",
+                allow_pickle=True)
+        self.rbm_stack[name].weight_h_to_v = np.load(f"{loc}/dbn.{name}.weight_h_to_v.npy",
+                allow_pickle=True)
+        self.rbm_stack[name].bias_v        = np.load(f"{loc}/dbn.{name}.bias_v.npy",
+                allow_pickle=True)
         self.rbm_stack[name].bias_h        = np.load(f"{loc}/dbn.{name}.bias_h.npy")
         print(f"Loaded rbm[{name}] from {loc}.")
 
