@@ -67,20 +67,16 @@ class DeepBeliefNet():
                           size of label layer). Used only for calculating
                           accuracy, not driving the net
         """
-        n_samples = X.shape[0]
         y_init = np.ones(y.shape) * 0.1 # Uninformed labels
 
         # Specify the vis--hid RBM
         vis__hid = self.rbm_stack["vis--hid"]
-        vis__hid.bias_h = vis__hid.bias_h.reshape(-1, 1)
 
         # Specify the hid--pen RBM
         hid__pen = self.rbm_stack["hid--pen"]
-        hid__pen.bias_h.reshape(-1, 1)
 
         # Specify the pen+lbl--top RBM
         pen_lbl__top = self.rbm_stack["pen+lbl--top"]
-        pen_lbl__top.bias_h.reshape(-1, 1)
 
         # Forward propagation through the network
         fp_bottom_h_prob, fp_bottom_h_state = vis__hid.get_h_given_v(X,
