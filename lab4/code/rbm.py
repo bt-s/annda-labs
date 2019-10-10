@@ -261,9 +261,11 @@ class RestrictedBoltzmannMachine():
             h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_vh))
         else:
             if direction == "up":
-                h_prob = self._sigmoid(self.bias_h.T + np.dot(X_batch, self.weight_v_to_h))
+                h_prob = self._sigmoid(self.bias_h + np.dot(
+                    X_batch, self.weight_v_to_h))
             elif direction == "down":
-                h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_h_to_v))
+                h_prob = self._sigmoid(self.bias_h + np.dot(
+                    X_batch, self.weight_h_to_v))
             else:
                 raise ValueError("Input argument <directed> has to be either 'up' or 'down'.")
 
@@ -272,11 +274,13 @@ class RestrictedBoltzmannMachine():
         return h_prob, h_state
 
 
-    def get_v_given_h(self, H_batch):
+    def get_v_given_h(self, H_batch, directed=False, direction="up"):
         """Compute probabilities p(v|h) and activations v ~ p(v|h)
 
         Args:
            H_batch: shape is (size of mini-batch, size of hidden layer)
+            directed (bool): Whether to use weight_v_to_h or weight_vh
+            direction (str): One of "up" or "down"
 
         Returns:
            v_prob (np.ndarray): p(v=1|h) (size mini-batch, size hidden layer)
@@ -302,8 +306,18 @@ class RestrictedBoltzmannMachine():
             v_state = np.hstack((v_state_data, v_state_labels))
 
         else:
-            v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
-                self.weight_vh.T))
+            if not directed:
+                v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
+                    self.weight_vh.T))
+            else:
+                if direction == "up":
+                    v_prob = self._sigmoid(self.bias_v + np.dot(
+                        H_batch, self.weight_v_to_h))
+                elif direction == "down":
+                    v_prob = self._sigmoid(self.bias_v + np.dot(
+                        H_batch, self.weight_h_to_v))
+                else:
+                    raise ValueError("Input argument <directed> has to be either 'up' or 'down'.")
 
             v_state = self._sample_binary(v_prob)
 
