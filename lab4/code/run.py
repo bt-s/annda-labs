@@ -67,9 +67,10 @@ if __name__ == "__main__":
             image_size=image_size, n_labels=10, batch_size=10)
 
         # Greedy layer-wise training
-        dbn.train_greedylayerwise(vis_trainset=train_imgs[:4000, :],
-                lbl_trainset=train_lbls[:4000, :],
-                n_iterations=2000)
+        dbn.train_greedylayerwise(X=train_imgs, y=train_lbls,
+                n_iterations=60000, save_to_file=True)
+
+        dbn.recognize(X=test_imgs, y=test_lbls)
 
     # This has not been implemented yet
     if False:
