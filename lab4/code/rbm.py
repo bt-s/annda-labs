@@ -97,8 +97,9 @@ class RestrictedBoltzmannMachine():
         Returns:
             (np.ndarray): on_probabilities (size of mini-batch, number of categories)
         """
-        expsup = np.exp(support - np.sum(support, axis=1)[:, None])
-        return expsup / np.sum(expsup, axis=1)[:, None]
+        expsup = np.exp(support - np.max(support, axis=1)[:,None])
+
+        return expsup / expsup.sum(axis=1)[:, None]
 
 
     @staticmethod
@@ -133,6 +134,7 @@ class RestrictedBoltzmannMachine():
         activations = np.zeros(probabilities.shape)
         activations[range(probabilities.shape[0]),
                 np.argmax((cumsum >= rand), axis=1)] = 1
+
         return activations
 
 
