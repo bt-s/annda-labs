@@ -83,6 +83,7 @@ class RestrictedBoltzmannMachine():
         Returns:
             (np.ndarray): on_probabilities (size of mini-batch, size of layer)
         """
+        support[support < -700] = -700
         return 1. / (1. + np.exp(-support))
 
 
