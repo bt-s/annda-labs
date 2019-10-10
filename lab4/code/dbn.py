@@ -108,20 +108,18 @@ class DeepBeliefNet():
                 (name,np.argmax(true_lbl)))
 
 
-    def train_greedylayerwise(self, vis_trainset, lbl_trainset, n_iterations,
+    def train_greedylayerwise(self, X, y, n_iterations,
             load_from_file=False, save_to_file=False):
-        """Greedy layer-wise training by stacking RBMs. This method first tries
-        to load previous saved parameters of the entire RBM stack.
-        If not found, learns layer-by-layer (which needs to be completed).
+        """Greedy layer-wise training by stacking RBMs.
 
         Notice that once you stack more layers on top of a RBM, the weights are
         permanently untwined.
 
         Args:
-          vis_trainset (np.ndarray): Visible data shaped (size of training set,
-                                     size of visible layer)
-          lbl_trainset (np.ndarray): Label data shaped (size of training set,
-                                     size of label layer)
+          X (np.ndarray): Visible data shaped (size of training set,
+                          size of visible layer)
+          y (np.ndarray): Label data shaped (size of training set,
+                          size of label layer)
           n_iterations (int): Number of iterations of learning (each iteration
                               learns a mini-batch)
           load_from_file (bool): Whether to load from file
@@ -137,42 +135,41 @@ class DeepBeliefNet():
             self.loadfromfile_rbm(loc="trained_rbm", name="pen+lbl--top")
 
         else:
-            ## Layer VIS--HID
-            print ("\n>> Training layer vis--hid...")
+            ## RBM VIS--HID
+            print ("\n>> Training RBM vis--hid...")
 
-            # Learn the weights of the vis--hid layer by means of CD1
-            self.rbm_stack["vis--hid"].cd1(vis_trainset,
-                    n_iterations=n_iterations)
-
-            # Untwine the weights after learning
-            self.rbm_stack["vis--hid"].untwine_weights()
+            # Learn the weights of the vis--hid RBM by means of CD1
+            self.rbm_stack["vis--hid"].cd1(X, n_iterations=n_iterations)
 
             # Save layer represenetations to file if requested
             if save_to_file: self.savetofile_rbm(loc="trained_rbm",
                     name="vis--hid")
 
+            # Untwine the weights after learning
+            self.rbm_stack["vis--hid"].untwine_weights()
 
-            ## Layer HID--PEN
-            print ("\n>> Training layer hid--pen...")
 
-            # Learn the weights of the hid--pen layer by means of CD1
+            ## RBM HID--PEN
+            print ("\n>> Training RBM hid--pen...")
+
+            # Learn the weights of the hid--pen RBM by means of CD1
             self.rbm_stack["hid--pen"].cd1(self.rbm_stack["vis--hid"].H,
                     n_iterations=n_iterations)
-
-            # Untwine the weights after learning
-            self.rbm_stack["hid--pen"].untwine_weights()
 
             # Save layer represenetations to file if requested
             if save_to_file: self.savetofile_rbm(loc="trained_rbm",
                     name="hid--pen")
 
+            # Untwine the weights after learning
+            self.rbm_stack["hid--pen"].untwine_weights()
 
-            ## Layer PEN+LBL--TOP
+
+            ## RBM PEN+LBL--TOP
             print ("\n>> Training layer pen+lbl--top...")
 
-            # Learn the weights of the pen+lbl--top layer by means of CD1
+            # Learn the weights of the pen+lbl--top RBM by means of CD1
             self.rbm_stack["pen+lbl--top"].cd1(np.hstack(
-                (self.rbm_stack["vis--hid"].H, lbl_trainset)),
+                (self.rbm_stack["hid--pen"].H, y)),
                 n_iterations=n_iterations)
 
             # Save layer represenetations to file if requested
