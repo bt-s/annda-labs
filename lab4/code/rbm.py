@@ -213,10 +213,6 @@ class RestrictedBoltzmannMachine():
                 # Restart the time
                 start = time.time()
 
-                # Reshuffle the data so that we don't always have the same
-                # mini-batches
-                np.random.shuffle(X)
-
                 epoch += 1
 
 
