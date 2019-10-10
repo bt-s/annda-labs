@@ -83,6 +83,7 @@ class RestrictedBoltzmannMachine():
         Returns:
             (np.ndarray): on_probabilities (size of mini-batch, size of layer)
         """
+        support[support < -700] = -700
         return 1. / (1. + np.exp(-support))
 
 
@@ -96,8 +97,9 @@ class RestrictedBoltzmannMachine():
         Returns:
             (np.ndarray): on_probabilities (size of mini-batch, number of categories)
         """
-        expsup = np.exp(support - np.sum(support, axis=1)[:, None])
-        return expsup / np.sum(expsup, axis=1)[:, None]
+        expsup = np.exp(support - np.max(support, axis=1)[:,None])
+
+        return expsup / expsup.sum(axis=1)[:, None]
 
 
     @staticmethod
@@ -132,6 +134,7 @@ class RestrictedBoltzmannMachine():
         activations = np.zeros(probabilities.shape)
         activations[range(probabilities.shape[0]),
                 np.argmax((cumsum >= rand), axis=1)] = 1
+
         return activations
 
 
@@ -190,7 +193,7 @@ class RestrictedBoltzmannMachine():
             self.update_params(X_batch, ph_prob, v_state, nh_prob)
 
             # Monitor the updates
-            if it % n_it_per_epoch == 0:
+            if it % n_it_per_epoch == 0 and it != 0:
                 end = time.time()
                 if self.is_top:
                     print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
@@ -199,21 +202,16 @@ class RestrictedBoltzmannMachine():
                     print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
                         f'{round(np.linalg.norm(X - V), 2)}'))
 
-                # Visualize once in a while when visible layer is input images
+                # Visualize once per epoch when visible layer is input images
                 if self.is_bottom:
                     viz_rf(weights=self.weight_vh[:, self.rf["ids"]].reshape(
                         (self.image_size[0], self.image_size[1], -1)), it=it,
                         grid=self.rf["grid"])
 
-                if it != 0:
-                    print(f'This epoch took {round(end - start, 2)} seconds to run.\n')
+                print(f'This epoch took {round(end - start, 2)} seconds to run.\n')
 
                 # Restart the time
                 start = time.time()
-
-                # Reshuffle the data so that we don't always have the same
-                # mini-batches
-                np.random.shuffle(X)
 
                 epoch += 1
 
@@ -245,13 +243,13 @@ class RestrictedBoltzmannMachine():
         self.weight_vh = None
 
 
-    def get_h_given_v(self, X_batch, directed=False):
+    def get_h_given_v(self, X_batch, directed=False, direction="up"):
         """Compute probabilities p(h|v) and activations h ~ p(h|v)
-
 
         Args:
             X_batch (np.ndarray): (size of mini-batch, size of visible layer)
             directed (bool): Whether to use weight_v_to_h or weight_vh
+            direction (str): One of "up" or "down"
 
         Returns:
             Returns:
@@ -262,19 +260,23 @@ class RestrictedBoltzmannMachine():
         if not directed:
             h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_vh))
         else:
-            h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_v_to_h))
+            if direction == "up":
+                h_prob = self._sigmoid(self.bias_h.T + np.dot(X_batch, self.weight_v_to_h))
+            elif direction == "down":
+                h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_h_to_v))
+            else:
+                raise ValueError("Input argument <directed> has to be either 'up' or 'down'.")
 
         h_state = self._sample_binary(h_prob)
 
         return h_prob, h_state
 
 
-    def get_v_given_h(self, H_batch, directed=False):
+    def get_v_given_h(self, H_batch):
         """Compute probabilities p(v|h) and activations v ~ p(v|h)
 
         Args:
            H_batch: shape is (size of mini-batch, size of hidden layer)
-            directed (bool): Whether to use weight_h_to_v or weight_vh
 
         Returns:
            v_prob (np.ndarray): p(v=1|h) (size mini-batch, size hidden layer)
@@ -300,12 +302,8 @@ class RestrictedBoltzmannMachine():
             v_state = np.hstack((v_state_data, v_state_labels))
 
         else:
-            if not directed:
-                v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
-                    self.weight_vh.T))
-            else:
-                v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
-                    self.weight_h_to_v))
+            v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
+                self.weight_vh.T))
 
             v_state = self._sample_binary(v_prob)
 
