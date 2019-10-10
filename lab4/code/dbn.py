@@ -57,31 +57,47 @@ class DeepBeliefNet():
         self.print_period = 2000
 
 
-    def recognize(self, true_img, true_lbl):
+    def recognize(self, X, y):
         """Recognize/Classify the data into label categories and calc accuracy
 
         Args:
-          true_imgs (np.ndarray): visible data of shape (number of samples,
-                                  size of visible layer)
-          true_lbl (np.ndarray): true labels of shape (number of samples,
-                                 size of label layer). Used only for calculating
-                                 accuracy, not driving the net
+          X (np.ndarray): visible data of shape (number of samples,
+                          size of visible layer)
+          y (np.ndarray): true labels of shape (number of samples,
+                          size of label layer). Used only for calculating
+                          accuracy, not driving the net
         """
-        n_samples = true_img.shape[0]
+        n_samples = X.shape[0]
+        y_init = np.ones(y.shape) * 0.1 # Uninformed labels
 
-        # Visible layer gets the image data
-        vis = true_img
+        # Specify the vis--hid RBM
+        vis__hid = self.rbm_stack["vis--hid"]
+        vis__hid.bias_h = vis__hid.bias_h.reshape(-1, 1)
 
-        # Start the net by telling you know nothing about labels
-        lbl = np.ones(true_lbl.shape) / 10.
+        # Specify the hid--pen RBM
+        hid__pen = self.rbm_stack["hid--pen"]
+        hid__pen.bias_h.reshape(-1, 1)
 
+        # Specify the pen+lbl--top RBM
+        pen_lbl__top = self.rbm_stack["pen+lbl--top"]
+        pen_lbl__top.bias_h.reshape(-1, 1)
+
+        # Forward propagation through the network
+        fp_bottom_h_prob, fp_bottom_h_state = vis__hid.get_h_given_v(X,
+                directed=True, direction="up")
+        fp_interm_h_prob, fp_interm_h_state = hid__pen.get_h_given_v(
+                fp_bottom_h_prob, directed=True, direction="up")
+
+        # Perform alternating Gibbs sampling
+        v_state = np.hstack((fp_interm_h_state, y_init))
         for _ in range(self.n_gibbs_recog):
-            pass
+            h_prob, h_state = pen_lbl__top.get_h_given_v(v_state)
+            v_prob, v_state = pen_lbl__top.get_v_given_h(h_state)
 
-        predicted_lbl = np.zeros(true_lbl.shape)
+        y_pred = v_state[:, -10:]
 
         print ("accuracy = %.2f%%" % (100. * np.mean(np.argmax(
-            predicted_lbl, axis=1) == np.argmax(true_lbl, axis=1))))
+            y_pred, axis=1) == np.argmax(y, axis=1))))
 
 
     def generate(self, true_lbl, name):
