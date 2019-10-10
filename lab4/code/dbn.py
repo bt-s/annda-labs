@@ -67,20 +67,16 @@ class DeepBeliefNet():
                           size of label layer). Used only for calculating
                           accuracy, not driving the net
         """
-        n_samples = X.shape[0]
         y_init = np.ones(y.shape) * 0.1 # Uninformed labels
 
         # Specify the vis--hid RBM
         vis__hid = self.rbm_stack["vis--hid"]
-        vis__hid.bias_h = vis__hid.bias_h.reshape(-1, 1)
 
         # Specify the hid--pen RBM
         hid__pen = self.rbm_stack["hid--pen"]
-        hid__pen.bias_h.reshape(-1, 1)
 
         # Specify the pen+lbl--top RBM
         pen_lbl__top = self.rbm_stack["pen+lbl--top"]
-        pen_lbl__top.bias_h.reshape(-1, 1)
 
         # Forward propagation through the network
         fp_bottom_h_prob, fp_bottom_h_state = vis__hid.get_h_given_v(X,
@@ -100,28 +96,59 @@ class DeepBeliefNet():
             y_pred, axis=1) == np.argmax(y, axis=1))))
 
 
-    def generate(self, true_lbl, name):
+    def generate(self, X, y, name):
         """Generate data from labels
 
         Args:
-          true_lbl (np.ndarray): true labels shaped (number of samples,
-                                 size of label layer)
+          y (np.ndarray): true labels shaped (number of samples,
+                          number of classes)
           name (str): used for saving a video of generated visible activations
         """
-        n_sample, records = true_lbl.shape[0], []
+        n_sample, records = y.shape[0], []
         fig, ax = plt.subplots(1, 1, figsize=(3, 3))
         plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         ax.set_xticks([]); ax.set_yticks([])
 
-        lbl = true_lbl
+        # Specify the vis--hid RBM
+        vis__hid = self.rbm_stack["vis--hid"]
 
-        for _ in range(self.n_gibbs_gener):
-            vis = np.random.rand(n_sample, self.sizes["vis"])
-            records.append([ax.imshow(vis.reshape(self.image_size), cmap="bwr",
-                vmin=0, vmax=1, animated=True, interpolation=None)])
+        # Specify the hid--pen RBM
+        hid__pen = self.rbm_stack["hid--pen"]
 
-        anim = stitch_video(fig,records).save("plots_and_animations/%s.generate%d.mp4" %
-                (name,np.argmax(true_lbl)))
+        # Specify the pen+lbl--top RBM
+        pen_lbl__top = self.rbm_stack["pen+lbl--top"]
+
+        # Forward propagation through the network
+        fp_bottom_h_prob, fp_bottom_h_state = vis__hid.get_h_given_v(X,
+                directed=True, direction="up")
+        fp_interm_h_prob, fp_interm_h_state = hid__pen.get_h_given_v(
+                fp_bottom_h_prob, directed=True, direction="up")
+
+        # Perform alternating Gibbs sampling
+        y = np.repeat(y, X.shape[0], axis=0)
+        v_state = np.hstack((fp_interm_h_state, y))
+
+        # Perform Gibbs sampling
+        for it in range(self.n_gibbs_gener):
+            h_prob, h_state = pen_lbl__top.get_h_given_v(v_state)
+            v_prob, v_state = pen_lbl__top.get_v_given_h(h_state)
+            v_state[:, -10:] = y # fix y
+
+            if it % 10 == 0:
+                v_state_data_only = np.copy(v_state[:, :-10])
+
+                # Backward propagation
+                bp_hid_h_prob, bp_hid_h_state = hid__pen.get_v_given_h(v_state_data_only,
+                        directed=True, direction="down")
+                bp_vis_h_prob, bp_vis_h_state = vis__hid.get_v_given_h(bp_hid_h_state,
+                        directed=True, direction="down")
+
+                records.append([ax.imshow(np.mean(bp_vis_h_prob, axis=0).reshape(
+                    self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True,
+                    interpolation=None)])
+
+            anim = stitch_video(fig,records).save("plots_and_animations/%s.generate%d.mp4" %
+                    (name,np.argmax(y)))
 
 
     def train_greedylayerwise(self, X, y, n_iterations,
