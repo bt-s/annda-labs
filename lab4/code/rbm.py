@@ -193,7 +193,7 @@ class RestrictedBoltzmannMachine():
             self.update_params(X_batch, ph_prob, v_state, nh_prob)
 
             # Monitor the updates
-            if it % n_it_per_epoch == 0:
+            if it % n_it_per_epoch == 0 and it != 0:
                 end = time.time()
                 if self.is_top:
                     print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
@@ -202,14 +202,13 @@ class RestrictedBoltzmannMachine():
                     print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
                         f'{round(np.linalg.norm(X - V), 2)}'))
 
-                # Visualize once in a while when visible layer is input images
+                # Visualize once per epoch when visible layer is input images
                 if self.is_bottom:
                     viz_rf(weights=self.weight_vh[:, self.rf["ids"]].reshape(
                         (self.image_size[0], self.image_size[1], -1)), it=it,
                         grid=self.rf["grid"])
 
-                if it != 0:
-                    print(f'This epoch took {round(end - start, 2)} seconds to run.\n')
+                print(f'This epoch took {round(end - start, 2)} seconds to run.\n')
 
                 # Restart the time
                 start = time.time()
