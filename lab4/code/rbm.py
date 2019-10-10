@@ -190,7 +190,7 @@ class RestrictedBoltzmannMachine():
                self.H[mb_start:mb_end, :] = nh_prob
 
             # Updating parameters
-            self.update_params(X_batch, ph_prob, v_state, nh_prob)
+            self.update_params(X_batch, ph_prob, v_prob, nh_prob)
 
             # Monitor the updates
             if it % n_it_per_epoch == 0 and it != 0:
