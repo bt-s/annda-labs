@@ -193,7 +193,7 @@ class DeepBeliefNet():
 
 
             ## RBM HID--PEN
-            print ("\n>> Training RBM hid--pen...")
+            print("\n>> Training RBM hid--pen...")
 
             # Learn the weights of the hid--pen RBM by means of CD1
             self.rbm_stack["hid--pen"].cd1(self.rbm_stack["vis--hid"].H,
@@ -208,7 +208,7 @@ class DeepBeliefNet():
 
 
             ## RBM PEN+LBL--TOP
-            print ("\n>> Training layer pen+lbl--top...")
+            print("\n>> Training layer pen+lbl--top...")
 
             # Learn the weights of the pen+lbl--top RBM by means of CD1
             self.rbm_stack["pen+lbl--top"].cd1(np.hstack(
