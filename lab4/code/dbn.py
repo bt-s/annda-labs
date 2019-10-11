@@ -223,13 +223,23 @@ class DeepBeliefNet():
             print("\n>> Training layer pen+lbl--top...")
 
             # Learn the weights of the pen+lbl--top RBM by means of CD1
-            self.rbm_stack["pen+lbl--top"].cd1(np.hstack(
-                (self.rbm_stack["hid--pen"].H, y)),
-                n_iterations=n_iterations)
+            if compute_rec_err:
+                err = self.rbm_stack["pen+lbl--top"].cd1(np.hstack(
+                    (self.rbm_stack["hid--pen"].H, y)), n_iterations=n_iterations,
+                    compute_rec_err=compute_rec_err)
+                self.reconstruction_errors.append(err)
+            else:
+                self.rbm_stack["pen+lbl--top"].cd1(np.hstack(
+                    (self.rbm_stack["hid--pen"].H, y)),
+                    n_iterations=n_iterations)
 
             # Save layer represenetations to file if requested
             if save_to_file: self.savetofile_rbm(loc="trained_rbm",
                     name="pen+lbl--top")
+
+            if compute_rec_err:
+                plot_reconstruction_err(self.reconstruction_errors,
+                        fname="plots_and_animations/errors.pdf", save_fig=True)
 
 
     def train_wakesleep_finetune(self, vis_trainset, lbl_trainset, n_iterations):
