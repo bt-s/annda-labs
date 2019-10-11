@@ -242,60 +242,92 @@ class DeepBeliefNet():
                         fname="plots_and_animations/errors.pdf", save_fig=True)
 
 
-    def train_wakesleep_finetune(self, vis_trainset, lbl_trainset, n_iterations):
+    def train_wakesleep_finetune(self, X, y, n_iterations,
+            load_from_file=False, save_to_file=False):
         """Wake-sleep method for learning all the parameters of network.
         First tries to load previous saved parameters of the entire network.
 
         Args:
-          vis_trainset (np.ndarray): visible data shaped (size of training set,
-                                     size of visible layer)
-          lbl_trainset (np.ndarray): label data shaped (size of training set,
-                                     size of label layer)
+          X (np.ndarray): visible data shaped (size of training set,
+                          size of visible layer)
+          y (np.ndarray): label data shaped (size of training set,
+                          size of label layer)
           n_iterations (int): number of iterations of learning (each iteration
                               learns a mini-batch)
+          load_from_file (bool): Whether to load from file
+          save_to_file (bool): Whether to save to file
         """
-        print ("\nTraining wake-sleep...")
+        print("\n> Training wake-sleep...")
+        if load_from_file:
+            self.loadfromfile_dbn(loc="trained_dbn", name="vis--hid")
+            self.loadfromfile_dbn(loc="trained_dbn", name="hid--pen")
+            self.loadfromfile_rbm(loc="trained_dbn", name="pen+lbl--top")
 
-        try :
-            self.loadfromfile_dbn(loc="trained_dbn",name="vis--hid")
-            self.loadfromfile_dbn(loc="trained_dbn",name="hid--pen")
-            self.loadfromfile_rbm(loc="trained_dbn",name="pen+lbl--top")
-
-        except IOError :
-            self.n_samples = vis_trainset.shape[0]
+        else:
+            # Specify the RBMs
+            vis__hid = self.rbm_stack["vis--hid"]
+            hid__pen = self.rbm_stack["hid--pen"]
+            pen_lbl__top = self.rbm_stack["pen+lbl--top"]
 
             for it in range(n_iterations):
-                # wake-phase : drive the network bottom-to-top using visible
-                # and label data
+                ## Wake-phase
+                # RBM vis__hid
+                wake_vis_h_prob, wake_vis_h_state = vis__hid.get_h_given_v(
+                        X, directed=True, direction="up")
 
-                # alternating Gibbs sampling in the top RBM : also store
+                wake_vis_v_prob, wake_vis_v_state = vis__hid.get_v_given_h(
+                        wake_vis_h_state, directed=True, direction="down")
+
+                vis__hid.update_generate_params(X, wake_vis_h_state,
+                        wake_vis_v_prob)
+
+                # RBM hid__pen
+                wake_hid_h_prob, wake_hid_h_state = hid__pen.get_h_given_v(
+                        wake_vis_h_state, directed=True, direction="up")
+
+                wake_hid_v_prob, wake_hid_v_state = hid__pen.get_v_given_h(
+                        wake_hid_h_state, directed=True, direction="down")
+
+                hid__pen.update_generate_params(wake_vis_h_state, wake_hid_h_state,
+                        wake_hid_v_prob)
+
+                pen_lbl_v_state = np.hstack((wake_hid_v_state, y))
+
+                # Training the top RBM with CD1
+                pen_lbl__top.cd1(pen_lbl_v_state, 18000)
+
+                ## Alternating Gibbs sampling in the top RBM: also store
                 # neccessary information for learning this RBM
+                for _ in range(self.n_gibbs_wakesleep):
+                    h_prob, h_state = pen_lbl__top.get_h_given_v(pen_lbl_v_state)
+                    v_prob, pen_lbl_v_state = pen_lbl__top.get_v_given_h(h_state)
 
-                # sleep phase : from the activities in the top RBM, drive the
-                # network top-to-bottom
+                ## Sleep-phase
+                # RBM hid__pen
+                sleep_hid_v_prob, sleep_hid_v_state = hid__pen.get_v_given_h(
+                        pen_lbl_v_state[:, :-self.n_labels], directed=True,
+                        direction="down")
 
-                # predictions : compute generative predictions from wake-phase
-                # activations, and recognize predictions from sleep-phase
-                # activations
+                sleep_hid_h_prob, sleep_hid_h_state = hid__pen.get_h_given_v(
+                        sleep_hid_v_state, directed=True, direction="up")
 
-                # update generative parameters :
-                # here you will only use "update_generate_params" method from
-                # rbm class
+                hid__pen.update_recognize_params(pen_lbl_v_state[:,
+                    :-self.n_labels], sleep_hid_v_state, sleep_hid_h_prob)
 
-                # update parameters of top rbm:
-                # here you will only use "update_params" method from rbm class
+                # RBM vis__hid
+                sleep_vis_v_prob, sleep_vis_v_state = vis__hid.get_v_given_h(
+                        sleep_hid_v_state, directed=True, direction="down")
 
-                # update generative parameters :
-                # here you will only use "update_recognize_params" method from
-                # rbm class
+                sleep_vis_h_prob, sleep_vis_h_state = vis__hid.get_h_given_v(
+                        sleep_vis_v_state, directed=True, direction="up")
 
-                if it % self.print_period == 0 : print ("iteration=%7d"%it)
+                vis__hid.update_recognize_params(sleep_hid_v_state,
+                        sleep_vis_v_state, sleep_vis_h_prob)
 
-            self.savetofile_dbn(loc="trained_dbn",name="vis--hid")
-            self.savetofile_dbn(loc="trained_dbn",name="hid--pen")
-            self.savetofile_rbm(loc="trained_dbn",name="pen+lbl--top")
-
-        return
+            if save_to_file:
+                self.savetofile_dbn(loc="trained_dbn", name="vis--hid")
+                self.savetofile_dbn(loc="trained_dbn", name="hid--pen")
+                self.savetofile_rbm(loc="trained_dbn", name="pen+lbl--top")
 
 
     def loadfromfile_rbm(self, loc, name):
