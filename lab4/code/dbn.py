@@ -54,7 +54,8 @@ class DeepBeliefNet():
         self.n_gibbs_recog = 15
         self.n_gibbs_gener = 200
         self.n_gibbs_wakesleep = 5
-        self.print_period = 2000
+        self.n_labels = n_labels
+        self.reconstruction_errors = []
 
 
     def recognize(self, X, y):
@@ -151,8 +152,8 @@ class DeepBeliefNet():
                     (name,np.argmax(y)))
 
 
-    def train_greedylayerwise(self, X, y, n_iterations,
-            load_from_file=False, save_to_file=False):
+    def train_greedylayerwise(self, X, y, n_iterations, load_from_file=False,
+            save_to_file=False, compute_rec_err=False):
         """Greedy layer-wise training by stacking RBMs.
 
         Notice that once you stack more layers on top of a RBM, the weights are
@@ -167,6 +168,7 @@ class DeepBeliefNet():
                               learns a mini-batch)
           load_from_file (bool): Whether to load from file
           save_to_file (bool): Whether to save to file
+        compute_rec_err (bool): Whether to compute the reconstruction error
         """
         if load_from_file:
             self.loadfromfile_rbm(loc="trained_rbm", name="vis--hid")
@@ -182,7 +184,12 @@ class DeepBeliefNet():
             print ("\n>> Training RBM vis--hid...")
 
             # Learn the weights of the vis--hid RBM by means of CD1
-            self.rbm_stack["vis--hid"].cd1(X, n_iterations=n_iterations)
+            if compute_rec_err:
+                err = self.rbm_stack["vis--hid"].cd1(X, n_iterations=n_iterations,
+                        compute_rec_err=compute_rec_err)
+                self.reconstruction_errors.append(err)
+            else:
+                self.rbm_stack["vis--hid"].cd1(X, n_iterations=n_iterations)
 
             # Save layer represenetations to file if requested
             if save_to_file: self.savetofile_rbm(loc="trained_rbm",
@@ -196,8 +203,13 @@ class DeepBeliefNet():
             print("\n>> Training RBM hid--pen...")
 
             # Learn the weights of the hid--pen RBM by means of CD1
-            self.rbm_stack["hid--pen"].cd1(self.rbm_stack["vis--hid"].H,
-                    n_iterations=n_iterations)
+            if compute_rec_err:
+                err = self.rbm_stack["hid--pen"].cd1(self.rbm_stack["vis--hid"].H,
+                        n_iterations=n_iterations, compute_rec_err=compute_rec_err)
+                self.reconstruction_errors.append(err)
+            else:
+                self.rbm_stack["hid--pen"].cd1(self.rbm_stack["vis--hid"].H,
+                        n_iterations=n_iterations)
 
             # Save layer represenetations to file if requested
             if save_to_file: self.savetofile_rbm(loc="trained_rbm",

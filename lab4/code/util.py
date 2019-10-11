@@ -145,3 +145,22 @@ def plot_digit(d_arr, label):
     plt.title(f'Digit: {label}')
     plt.show()
 
+
+def plot_reconstruction_err(errors, fname="", save_fig=False):
+    """Plots the reconstruction errors over epochs
+
+    Args:
+        fname (str): File name for saving
+        save_fig (bool): Whether to save the plot
+    """
+
+    for i, _ in enumerate(errors):
+        plt.plot(range(len(errors[0])), errors[i],
+                label=f"Reconstruction Error Layer {i+1}")
+
+    plt.legend()
+    plt.title("The reconstruction errors over the epochs")
+    plt.xlabel("Epochs")
+    plt.ylabel("Reconstruction error")
+    if save_fig: plt.savefig(fname)
+    plt.show()
