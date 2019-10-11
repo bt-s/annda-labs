@@ -85,9 +85,9 @@ class DeepBeliefNet():
                 fp_bottom_h_prob, directed=True, direction="up")
 
         # Perform alternating Gibbs sampling
-        v_state = np.hstack((fp_interm_h_state, y_init))
+        v_prob = np.hstack((fp_interm_h_prob, y_init))
         for _ in range(self.n_gibbs_recog):
-            h_prob, h_state = pen_lbl__top.get_h_given_v(v_state)
+            h_prob, h_state = pen_lbl__top.get_h_given_v(v_prob)
             v_prob, v_state = pen_lbl__top.get_v_given_h(h_state)
 
         y_pred = v_state[:, -10:]
