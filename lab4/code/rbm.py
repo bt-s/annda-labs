@@ -57,7 +57,10 @@ class RestrictedBoltzmannMachine():
         self.bias_h = np.random.normal(loc=0.0, scale=0.01,
                 size=(self.ndim_hidden))
 
-        self.momentum = 0.7
+        self.d_weight_vh = np.zeros((self.ndim_visible,self.ndim_hidden))
+        self.d_bias_v = np.zeros((self.ndim_visible))
+        self.d_bias_h = np.zeros((self.ndim_hidden))
+        self.momentum = 0
         self.learning_rate = learning_rate
         self.image_size = image_size
 
@@ -228,13 +231,18 @@ class RestrictedBoltzmannMachine():
         Note: All args have shape (size of mini-batch, size of respective layer)
         Note: You could also add weight decay and momentum for weight updates.
         """
-        self.weight_vh += self.learning_rate * (np.dot(v0.T,
-            h0) - np.dot(v1.T, h1))
-        self.bias_v += self.learning_rate * np.mean(
-                v0 - v1, axis=0)
-        self.bias_h += self.learning_rate * np.mean(
-            h0 - h1, axis=0)
 
+        self.d_weight_vh = self.learning_rate * (np.dot(v0.T, h0) - np.dot(v1.T, h1))\
+                      + self.d_weight_vh * self.momentum
+        self.weight_vh += self.d_weight_vh
+
+        self.d_bias_v = self.learning_rate * np.mean(v0 - v1, axis=0)\
+                        + self.d_bias_v * self.momentum
+        self.bias_v += self.d_bias_v
+
+        self.d_bias_h = self.learning_rate * np.mean(h0 - h1, axis=0)\
+                        + self.d_bias_h * self.momentum
+        self.bias_h += self.d_bias_h
 
     def untwine_weights(self):
         """Decouple weight matrix"""
