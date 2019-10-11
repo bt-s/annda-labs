@@ -141,7 +141,7 @@ class RestrictedBoltzmannMachine():
         return activations
 
 
-    def cd1(self, X, n_iterations=10000):
+    def cd1(self, X, n_iterations=10000, compute_rec_err=False):
         """Contrastive Divergence with k=1 full alternating Gibbs sampling
 
         Args:
@@ -149,6 +149,7 @@ class RestrictedBoltzmannMachine():
                             shape is (num_images, ndim_visible)
             n_iterations (int): number of iterations of learning (each iteration
                                 learns a mini-batch)
+            compute_rec_err (bool): Whether to compute the reconstruction error
 
         Note: if using 60,000 MNIST data points with a mini-batch size of 20,
               n_iterations=30000 means that we have 10 training epochs. Why?
@@ -165,6 +166,9 @@ class RestrictedBoltzmannMachine():
 
         # We want to regenerate the complete visual and hidden layers
         V, self.H = np.zeros(X.shape), np.zeros((n_samples, self.ndim_hidden))
+
+        if compute_rec_err:
+            errors = []
 
         # Start timing
         start = time.time()
@@ -201,9 +205,13 @@ class RestrictedBoltzmannMachine():
                 if self.is_top:
                     print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
                         f'{round(np.linalg.norm(X[:, :-10] - V[:, :-10]), 2)}'))
+                    if compute_rec_err:
+                        errors.append(round(np.linalg.norm(X[:, :-10] - V[:, :-10]), 2))
                 else:
                     print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
                         f'{round(np.linalg.norm(X - V), 2)}'))
+                    if compute_rec_err:
+                        errors.append(round(np.linalg.norm(X - V), 2))
 
                 # Visualize once per epoch when visible layer is input images
                 if self.is_bottom:
@@ -217,6 +225,9 @@ class RestrictedBoltzmannMachine():
                 start = time.time()
 
                 epoch += 1
+
+        if compute_rec_err:
+            return errors
 
 
     def update_params(self, v0, h0, v1, h1):
