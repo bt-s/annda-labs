@@ -16,6 +16,11 @@ from rbm import RestrictedBoltzmannMachine
 from dbn import DeepBeliefNet
 
 PLOTS = False
+RBM = False
+DBN = True
+CLASSIFY = True
+GENERATE = True
+WAKE_SLEEP = True
 
 if __name__ == "__main__":
     # Fix the dimensions of the images
@@ -46,45 +51,57 @@ if __name__ == "__main__":
             plot_digit(train_imgs[i], train_lbls_digits[i])
 
 
-    # Restricted Boltzmann Machine
-    print ("\nStarting a Restricted Boltzmann Machine...")
+    if RBM:
+        # Restricted Boltzmann Machine
+        print ("\nStarting a Restricted Boltzmann Machine...")
 
-    rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
-            ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
-            n_labels=10, batch_size=20, learning_rate=0.1)
+        rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
+                ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
+                n_labels=10, batch_size=20, learning_rate=0.1)
 
-    rbm.cd1(X=train_imgs, n_iterations=30000)
+        rbm.cd1(X=train_imgs, n_iterations=30000)
 
-    # We do not always want to run everything in this main file
-    if False:
+    if DBN:
         # Deep Belief Net
-        print ("\nStarting a Deep Belief Net...")
+        print ("\n>>> Starting a Deep Belief Net...")
 
-        dbn = DeepBeliefNet(sizes={"vis":image_size[0]*image_size[1], "hid":500,
-            "pen":500, "top":2000, "lbl":10}, image_size=image_size, n_labels=10,
-            batch_size=10)
+        dbn = DeepBeliefNet(sizes={"vis": image_size[0] * image_size[1],
+            "hid": 500, "pen": 500, "top": 2000, "lbl": 10},
+            image_size=image_size, n_labels=10, batch_size=10)
 
         # Greedy layer-wise training
-        dbn.train_greedylayerwise(vis_trainset=train_imgs, lbl_trainset=train_lbls,
-                n_iterations=2000)
+        dbn.train_greedylayerwise(X=train_imgs, y=train_lbls,
+                n_iterations=60000, compute_rec_err=True)
 
-        dbn.recognize(train_imgs, train_lbls)
-        dbn.recognize(test_imgs, test_lbls)
+        if CLASSIFY:
+            # Recognize/Classify images
+            dbn.recognize(train_imgs, train_lbls)
+            dbn.recognize(test_imgs, test_lbls)
 
-        for digit in range(10):
-            digit_1hot = np.zeros(shape=(1, 10))
-            digit_1hot[0, digit] = 1
-            dbn.generate(digit_1hot, name="rbms")
+        if GENERATE:
+            # Generate prototyical digits
+            for digit in range(10):
+                digit_1hot = np.zeros(shape=(1, 10))
+                digit_1hot[0, digit] = 1
+                # Initialize based on a random training input
+                # (In this case we always use the first training image)
+                dbn.generate(X=train_imgs[0], y=digit_1hot, name="greedy")
 
+    if WAKE_SLEEP:
         # Fine-tune wake-sleep training
-        dbn.train_wakesleep_finetune(vis_trainset=train_imgs, lbl_trainset=train_lbls,
-                n_iterations=2000)
+        dbn.train_wakesleep_finetune(X=train_imgs, y=train_lbls,
+                n_iterations=16, save_to_file=True)
 
-        dbn.recognize(train_imgs, train_lbls)
-        dbn.recognize(test_imgs, test_lbls)
+        if CLASSIFY:
+            dbn.recognize(train_imgs, train_lbls)
+            dbn.recognize(test_imgs, test_lbls)
 
-        for digit in range(10):
-            digit_1hot = np.zeros(shape=(1, 10))
-            digit_1hot[0, digit] = 1
-            dbn.generate(digit_1hot, name="dbn")
+        if GENERATE:
+            # Generate prototyical digits
+            for digit in range(10):
+                digit_1hot = np.zeros(shape=(1, 10))
+                digit_1hot[0, digit] = 1
+                # Initialize based on a random training input
+                # (In this case we always use the first training image)
+                dbn.generate(X=train_imgs[0], y=digit_1hot, name="fine")
 
