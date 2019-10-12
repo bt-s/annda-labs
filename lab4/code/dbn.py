@@ -70,25 +70,21 @@ class DeepBeliefNet():
         """
         y_init = np.ones(y.shape) * 0.1 # Uninformed labels
 
-        # Specify the vis--hid RBM
+        # Specify the RBMS
         vis__hid = self.rbm_stack["vis--hid"]
-
-        # Specify the hid--pen RBM
         hid__pen = self.rbm_stack["hid--pen"]
-
-        # Specify the pen+lbl--top RBM
         pen_lbl__top = self.rbm_stack["pen+lbl--top"]
 
         # Forward propagation through the network
-        fp_bottom_h_prob, fp_bottom_h_state = vis__hid.get_h_given_v(X,
-                directed=True, direction="up")
-        fp_interm_h_prob, fp_interm_h_state = hid__pen.get_h_given_v(
-                fp_bottom_h_prob, directed=True, direction="up")
+        h_prob, h_state = vis__hid.get_h_given_v(X, directed=True,
+                direction="up")
+        h_prob, h_state = hid__pen.get_h_given_v(h_prob, directed=True,
+                direction="up")
 
         # Perform alternating Gibbs sampling
-        v_state = np.hstack((fp_interm_h_state, y_init))
+        v_prob = np.hstack((h_prob, y_init))
         for _ in range(self.n_gibbs_recog):
-            h_prob, h_state = pen_lbl__top.get_h_given_v(v_state)
+            h_prob, h_state = pen_lbl__top.get_h_given_v(v_prob)
             v_prob, v_state = pen_lbl__top.get_v_given_h(h_state)
 
         y_pred = v_state[:, -10:]
