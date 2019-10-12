@@ -138,17 +138,17 @@ class DeepBeliefNet():
                 v_state_data_only = np.copy(v_state[:, :-10])
 
                 # Backward propagation
-                bp_hid_h_prob, bp_hid_h_state = hid__pen.get_v_given_h(v_state_data_only,
-                        directed=True, direction="down")
-                bp_vis_h_prob, bp_vis_h_state = vis__hid.get_v_given_h(bp_hid_h_state,
-                        directed=True, direction="down")
+                bp_hid_h_prob, bp_hid_h_state = hid__pen.get_v_given_h(
+                        v_state_data_only, directed=True, direction="down")
+                bp_vis_h_prob, bp_vis_h_state = vis__hid.get_v_given_h(
+                        bp_hid_h_state, directed=True, direction="down")
 
                 records.append([ax.imshow(np.mean(bp_vis_h_prob, axis=0).reshape(
                     self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True,
                     interpolation=None)])
 
-            anim = stitch_video(fig,records).save("plots_and_animations/%s.generate%d.mp4" %
-                    (name,np.argmax(y)))
+            anim = stitch_video(fig,records).save(
+                "plots_and_animations/%s.generate%d.mp4" % (name,np.argmax(y)))
 
 
     def train_greedylayerwise(self, X, y, n_iterations,
@@ -169,13 +169,13 @@ class DeepBeliefNet():
           save_to_file (bool): Whether to save to file
         """
         if load_from_file:
-            self.loadfromfile_rbm(loc="trained_rbm", name="vis--hid")
+            self.loadfromfile_rbm(loc="trained_rbm_4pm", name="vis--hid")
             self.rbm_stack["vis--hid"].untwine_weights()
 
-            self.loadfromfile_rbm(loc="trained_rbm", name="hid--pen")
+            self.loadfromfile_rbm(loc="trained_rbm_4pm", name="hid--pen")
             self.rbm_stack["hid--pen"].untwine_weights()
 
-            self.loadfromfile_rbm(loc="trained_rbm", name="pen+lbl--top")
+            self.loadfromfile_rbm(loc="trained_rbm_4pm", name="pen+lbl--top")
 
         else:
             ## RBM VIS--HID
@@ -285,9 +285,9 @@ class DeepBeliefNet():
         """
         self.rbm_stack[name].weight_vh = np.load(f"{loc}/rbm.{name}.weight_vh.npy",
                 allow_pickle=True)
-        self.rbm_stack[name].bias_v    = np.load(f"{loc}/rbm.{name}.bias_v.npy",
+        self.rbm_stack[name].bias_v = np.load(f"{loc}/rbm.{name}.bias_v.npy",
                 allow_pickle=True)
-        self.rbm_stack[name].bias_h    = np.load(f"{loc}/rbm.{name}.bias_h.npy",
+        self.rbm_stack[name].bias_h = np.load(f"{loc}/rbm.{name}.bias_h.npy",
                 allow_pickle=True)
         print(f"Loaded rbm[{name}] from {loc}.")
 
@@ -311,13 +311,13 @@ class DeepBeliefNet():
             loc (str): The location of the file
             name (str): Name of RBM
         """
-        self.rbm_stack[name].weight_v_to_h = np.load(f"{loc}/dbn.{name}.weight_v_to_h.npy",
+        self.rbm_stack[name].weight_v_to_h = \
+                np.load(f"{loc}/dbn.{name}.weight_v_to_h.npy", allow_pickle=True)
+        self.rbm_stack[name].weight_h_to_v = \
+                np.load(f"{loc}/dbn.{name}.weight_h_to_v.npy", allow_pickle=True)
+        self.rbm_stack[name].bias_v = np.load(f"{loc}/dbn.{name}.bias_v.npy",
                 allow_pickle=True)
-        self.rbm_stack[name].weight_h_to_v = np.load(f"{loc}/dbn.{name}.weight_h_to_v.npy",
-                allow_pickle=True)
-        self.rbm_stack[name].bias_v        = np.load(f"{loc}/dbn.{name}.bias_v.npy",
-                allow_pickle=True)
-        self.rbm_stack[name].bias_h        = np.load(f"{loc}/dbn.{name}.bias_h.npy")
+        self.rbm_stack[name].bias_h = np.load(f"{loc}/dbn.{name}.bias_h.npy")
         print(f"Loaded rbm[{name}] from {loc}.")
 
 
@@ -328,8 +328,10 @@ class DeepBeliefNet():
             loc (str): The location of the file
             name (str): Name of RBM
         """
-        np.save(f"{loc}/dbn.{name}.weight_v_to_h", self.rbm_stack[name].weight_v_to_h)
-        np.save(f"{loc}/dbn.{name}.weight_h_to_v", self.rbm_stack[name].weight_h_to_v)
-        np.save(f"{loc}/dbn.{name}.bias_v",        self.rbm_stack[name].bias_v)
-        np.save(f"{loc}/dbn.{name}.bias_h",        self.rbm_stack[name].bias_h)
+        np.save(f"{loc}/dbn.{name}.weight_v_to_h",
+                self.rbm_stack[name].weight_v_to_h)
+        np.save(f"{loc}/dbn.{name}.weight_h_to_v",
+                self.rbm_stack[name].weight_h_to_v)
+        np.save(f"{loc}/dbn.{name}.bias_v", self.rbm_stack[name].bias_v)
+        np.save(f"{loc}/dbn.{name}.bias_h", self.rbm_stack[name].bias_h)
 
