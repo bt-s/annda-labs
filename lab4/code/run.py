@@ -18,8 +18,9 @@ from dbn import DeepBeliefNet
 PLOTS = False
 RBM = False
 DBN = True
-CLASSIFY = False
+CLASSIFY = True
 GENERATE = True
+WAKE_SLEEP = True
 
 if __name__ == "__main__":
     # Fix the dimensions of the images
@@ -70,7 +71,7 @@ if __name__ == "__main__":
 
         # Greedy layer-wise training
         dbn.train_greedylayerwise(X=train_imgs, y=train_lbls,
-                n_iterations=60000, load_from_file=True)
+                n_iterations=60000, save_fig=True)
 
         if CLASSIFY:
             # Recognize/Classify images
@@ -78,26 +79,29 @@ if __name__ == "__main__":
             dbn.recognize(test_imgs, test_lbls)
 
         if GENERATE:
-            # Change this to a higher number for more accurately generated images
-            # Ideally, this value would be set to 60,000
-            n_input_images = 100
-
             # Generate prototyical digits
             for digit in range(10):
                 digit_1hot = np.zeros(shape=(1, 10))
                 digit_1hot[0, digit] = 1
-                dbn.generate(X=train_imgs[:n_input_images], y=digit_1hot, name="rbms")
+                # Initialize based on a random training input
+                # (In this case we always use the first training image)
+                dbn.generate(X=train_imgs[0], y=digit_1hot, name="greedy")
 
-    if False:
+    if WAKE_SLEEP:
         # Fine-tune wake-sleep training
-        dbn.train_wakesleep_finetune(vis_trainset=train_imgs, lbl_trainset=train_lbls,
-                n_iterations=2000)
+        dbn.train_wakesleep_finetune(X=train_imgs, y=train_lbls,
+                n_iterations=16, save_to_file=True)
 
-        dbn.recognize(train_imgs, train_lbls)
-        dbn.recognize(test_imgs, test_lbls)
+        if CLASSIFY:
+            dbn.recognize(train_imgs, train_lbls)
+            dbn.recognize(test_imgs, test_lbls)
 
-        for digit in range(10):
-            digit_1hot = np.zeros(shape=(1, 10))
-            digit_1hot[0, digit] = 1
-            dbn.generate(digit_1hot, name="dbn")
+        if GENERATE:
+            # Generate prototyical digits
+            for digit in range(10):
+                digit_1hot = np.zeros(shape=(1, 10))
+                digit_1hot[0, digit] = 1
+                # Initialize based on a random training input
+                # (In this case we always use the first training image)
+                dbn.generate(X=train_imgs[0], y=digit_1hot, name="fine")
 
