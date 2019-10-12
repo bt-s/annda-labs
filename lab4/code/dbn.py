@@ -294,7 +294,7 @@ class DeepBeliefNet():
                 v = h
 
                 # Training the top RBM with CD1
-                pen_lbl__top.cd1(np.hstack((v, y)), 60000)
+                pen_lbl__top.cd1(np.hstack((v, y)), X.shape[0])
 
                 ## Alternating Gibbs sampling in the top RBM
                 for _ in range(self.n_gibbs_wakesleep):
