@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
         # Greedy layer-wise training
         dbn.train_greedylayerwise(X=train_imgs, y=train_lbls,
-                n_iterations=60000, save_fig=True)
+                n_iterations=60000, compute_rec_err=True)
 
         if CLASSIFY:
             # Recognize/Classify images

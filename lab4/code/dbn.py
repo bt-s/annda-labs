@@ -150,15 +150,15 @@ class DeepBeliefNet():
         permanently untwined.
 
         Args:
-          X (np.ndarray): Visible data shaped (size of training set,
-                          size of visible layer)
-          y (np.ndarray): Label data shaped (size of training set,
-                          size of label layer)
-          n_iterations (int): Number of iterations of learning (each iteration
-                              learns a mini-batch)
-          load_from_file (bool): Whether to load from file
-          save_to_file (bool): Whether to save to file
-        compute_rec_err (bool): Whether to compute the reconstruction error
+            X (np.ndarray): Visible data shaped (size of training set,
+                            size of visible layer)
+            y (np.ndarray): Label data shaped (size of training set,
+                            size of label layer)
+            n_iterations (int): Number of iterations of learning (each iteration
+                                learns a mini-batch)
+            load_from_file (bool): Whether to load from file
+            save_to_file (bool): Whether to save to file
+            compute_rec_err (bool): Whether to compute the reconstruction error
         """
         if load_from_file:
             self.loadfromfile_rbm(loc="trained_rbm", name="vis--hid")
