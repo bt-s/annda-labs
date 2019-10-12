@@ -117,7 +117,7 @@ class DeepBeliefNet():
         h_prob, h_state = hid__pen.get_h_given_v(h_prob, directed=True,
                 direction="up")
 
-        v_state = np.hstack((h_state, y))
+        v_state = np.hstack((h_state.reshape(1, -1), y))
 
         # Perform Gibbs sampling
         for it in range(self.n_gibbs_gener):
@@ -129,12 +129,12 @@ class DeepBeliefNet():
                 v_state_data_only = np.copy(v_state[:, :-10])
 
                 # Backward propagation
-                h_prob, _h_state = hid__pen.get_v_given_h(v_state_data_only,
+                h_prob, h_state = hid__pen.get_v_given_h(v_state_data_only,
                         directed=True, direction="down")
                 h_prob, h_state = vis__hid.get_v_given_h(h_state, directed=True,
                         direction="down")
 
-                records.append([ax.imshow(np.mean(bp_vis_h_prob, axis=0).reshape(
+                records.append([ax.imshow(np.mean(h_prob, axis=0).reshape(
                     self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True,
                     interpolation=None)])
 
@@ -248,9 +248,9 @@ class DeepBeliefNet():
         """
         print("\n> Training wake-sleep...")
         if load_from_file:
-            self.loadfromfile_dbn(loc="trained_dbn_4pm", name="vis--hid")
-            self.loadfromfile_dbn(loc="trained_dbn_4pm", name="hid--pen")
-            self.loadfromfile_rbm(loc="trained_dbn_4pm", name="pen+lbl--top")
+            self.loadfromfile_dbn(loc="trained_dbn", name="vis--hid")
+            self.loadfromfile_dbn(loc="trained_dbn", name="hid--pen")
+            self.loadfromfile_rbm(loc="trained_dbn", name="pen+lbl--top")
 
         else:
             # Specify the RBMs
