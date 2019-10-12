@@ -57,10 +57,13 @@ class RestrictedBoltzmannMachine():
         self.bias_h = np.random.normal(loc=0.0, scale=0.01,
                 size=(self.ndim_hidden))
 
-        self.d_weight_vh = np.zeros((self.ndim_visible,self.ndim_hidden))
+        self.d_weight_vh = np.zeros((self.ndim_visible, self.ndim_hidden))
+        self.d_weight_v_to_h = np.zeros(self.d_weight_vh.shape)
+        self.d_weight_h_to_v = np.zeros(self.d_weight_vh.shape).T
         self.d_bias_v = np.zeros((self.ndim_visible))
         self.d_bias_h = np.zeros((self.ndim_hidden))
         self.momentum = 0.7
+        self.decay = 0.0001
         self.learning_rate = learning_rate
         self.image_size = image_size
 
@@ -230,38 +233,6 @@ class RestrictedBoltzmannMachine():
             return errors
 
 
-    def update_params(self, v0, h0, v1, h1):
-        """Update the weight and bias parameters
-
-        Args:
-            v0: activities or probabilities of visible layer input
-            h0: activities or probabilities of hidden layer input
-            v1: activities or probabilities of visible layer output
-            h1: activities or probabilities of hidden layer output
-
-        Note: All args have shape (size of mini-batch, size of respective layer)
-        Note: You could also add weight decay and momentum for weight updates.
-        """
-
-        self.d_weight_vh = self.learning_rate * (np.dot(v0.T, h0) - np.dot(v1.T, h1))\
-                      + self.d_weight_vh * self.momentum
-        self.weight_vh += self.d_weight_vh
-
-        self.d_bias_v = self.learning_rate * np.mean(v0 - v1, axis=0)\
-                        + self.d_bias_v * self.momentum
-        self.bias_v += self.d_bias_v
-
-        self.d_bias_h = self.learning_rate * np.mean(h0 - h1, axis=0)\
-                        + self.d_bias_h * self.momentum
-        self.bias_h += self.d_bias_h
-
-    def untwine_weights(self):
-        """Decouple weight matrix"""
-        self.weight_v_to_h = np.copy(self.weight_vh)
-        self.weight_h_to_v = np.copy(self.weight_vh.T)
-        self.weight_vh = None
-
-
     def get_h_given_v(self, v, directed=False, direction="up"):
         """Compute probabilities p(h|v) and activations h ~ p(h|v)
 
@@ -277,14 +248,12 @@ class RestrictedBoltzmannMachine():
                                   (size mini-batch, size hidden layer)
         """
         if not directed:
-            h_prob = self._sigmoid(self.bias_h + np.dot(v, self.weight_vh))
+            h_prob = self._sigmoid(self.bias_h + v@self.weight_vh)
         else:
             if direction == "up":
-                h_prob = self._sigmoid(self.bias_h + np.dot(
-                    v, self.weight_v_to_h))
+                h_prob = self._sigmoid(self.bias_h + v@self.weight_v_to_h)
             elif direction == "down":
-                h_prob = self._sigmoid(self.bias_h + np.dot(
-                    v, self.weight_h_to_v))
+                h_prob = self._sigmoid(self.bias_h + v@self.weight_h_to_v)
             else:
                 raise ValueError("Input argument <directed> has to be either 'up' or 'down'.")
 
@@ -308,7 +277,7 @@ class RestrictedBoltzmannMachine():
         """
         if self.is_top:
             # Separate H_batch into the data support and labels support
-            support = self.bias_v + np.dot(h, self.weight_vh.T)
+            support = self.bias_v + h@self.weight_vh.T
             support_data = support[:, :-self.n_labels]
             support_labels = support[:, -self.n_labels:]
 
@@ -326,21 +295,51 @@ class RestrictedBoltzmannMachine():
 
         else:
             if not directed:
-                v_prob = self._sigmoid(self.bias_v + np.dot(h,
-                    self.weight_vh.T))
+                v_prob = self._sigmoid(self.bias_v + h@self.weight_vh.T)
             else:
                 if direction == "up":
-                    v_prob = self._sigmoid(self.bias_v + np.dot(
-                        h, self.weight_v_to_h))
+                    v_prob = self._sigmoid(self.bias_v + h@self.weight_v_to_h)
                 elif direction == "down":
-                    v_prob = self._sigmoid(self.bias_v + np.dot(
-                        h, self.weight_h_to_v))
+                    v_prob = self._sigmoid(self.bias_v + h@self.weight_h_to_v)
                 else:
                     raise ValueError("Input argument <directed> has to be either 'up' or 'down'.")
 
             v_state = self._sample_binary(v_prob)
 
         return v_prob, v_state
+
+
+    def untwine_weights(self):
+        """Decouple weight matrix"""
+        self.weight_v_to_h = np.copy(self.weight_vh)
+        self.weight_h_to_v = np.copy(self.weight_vh.T)
+        self.weight_vh = None
+
+
+    def update_params(self, v0, h0, v1, h1):
+        """Update the weight and bias parameters
+
+        Args:
+            v0: activities or probabilities of visible layer input
+            h0: activities or probabilities of hidden layer input
+            v1: activities or probabilities of visible layer output
+            h1: activities or probabilities of hidden layer output
+
+        Note: All args have shape (size of mini-batch, size of respective layer)
+        Note: You could also add weight decay and momentum for weight updates.
+        """
+
+        self.d_weight_vh = self.learning_rate * ((v0.T@h0 - v1.T@h1) - \
+                self.decay * self.weight_vh) + self.momentum * self.d_weight_vh
+        self.weight_vh += self.d_weight_vh
+
+        self.d_bias_v = self.learning_rate * np.mean(v0 - v1, axis=0)\
+                        + self.d_bias_v * self.momentum
+        self.bias_v += self.d_bias_v
+
+        self.d_bias_h = self.learning_rate * np.mean(h0 - h1, axis=0)\
+                        + self.d_bias_h * self.momentum
+        self.bias_h += self.d_bias_h
 
 
     def update_generate_params(self, y, x, y_hat):
@@ -351,8 +350,14 @@ class RestrictedBoltzmannMachine():
             x (np.ndarray): activities or probabilities of output unit (target)
             y_hat (np.ndarray): activities or probabilities of output unit (prediction)
         """
-        self.weight_h_to_v += self.learning_rate * np.dot(x.T,  (y - y_hat))
-        self.bias_v += self.learning_rate * np.mean(y - y_hat)
+        self.d_weight_h_to_v = self.learning_rate * (x.T@(y - y_hat) - \
+                self.decay * self.weight_h_to_v) + self.momentum * \
+                self.d_weight_h_to_v
+        self.weight_h_to_v += self.d_weight_h_to_v
+
+        self.d_bias_v += self.learning_rate * np.mean(y - y_hat, axis=0) + \
+                self.d_bias_v * self.momentum
+        self.bias_v += self.d_bias_v
 
 
     def update_recognize_params(self, y, x, y_hat):
@@ -363,6 +368,12 @@ class RestrictedBoltzmannMachine():
             x (np.ndarray): activities or probabilities of output unit (target)
             y_hat (np.ndarray): activities or probabilities of output unit (prediction)
         """
-        self.weight_v_to_h += self.learning_rate * np.dot(x.T, (y - y_hat))
-        self.bias_h += self.learning_rate * np.mean(y - y_hat)
+        self.d_weight_v_to_h = self.learning_rate * (x.T@(y - y_hat) - \
+                self.decay * self.weight_v_to_h) + self.momentum * \
+                self.d_weight_v_to_h
+        self.weight_v_to_h += self.d_weight_v_to_h
+
+        self.d_bias_h += self.learning_rate * np.mean(y - y_hat, axis=0) + \
+                self.d_bias_h * self.momentum
+        self.bias_h += self.d_bias_h
 
