@@ -60,7 +60,7 @@ class RestrictedBoltzmannMachine():
         self.d_weight_vh = np.zeros((self.ndim_visible,self.ndim_hidden))
         self.d_bias_v = np.zeros((self.ndim_visible))
         self.d_bias_h = np.zeros((self.ndim_hidden))
-        self.momentum = 0
+        self.momentum = 0.7
         self.learning_rate = learning_rate
         self.image_size = image_size
 
