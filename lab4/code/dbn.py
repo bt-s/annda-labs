@@ -97,48 +97,42 @@ class DeepBeliefNet():
         """Generate data from labels
 
         Args:
-          y (np.ndarray): true labels shaped (number of samples,
-                          number of classes)
-          name (str): used for saving a video of generated visible activations
+          X (np.ndarray): Input
+          y (np.ndarray): True label
+          name (str): For saving a video of generated visible activations
         """
         n_sample, records = y.shape[0], []
         fig, ax = plt.subplots(1, 1, figsize=(3, 3))
         plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         ax.set_xticks([]); ax.set_yticks([])
 
-        # Specify the vis--hid RBM
+        # Specify the RBMs
         vis__hid = self.rbm_stack["vis--hid"]
-
-        # Specify the hid--pen RBM
         hid__pen = self.rbm_stack["hid--pen"]
-
-        # Specify the pen+lbl--top RBM
         pen_lbl__top = self.rbm_stack["pen+lbl--top"]
 
         # Forward propagation through the network
-        fp_bottom_h_prob, fp_bottom_h_state = vis__hid.get_h_given_v(X,
-                directed=True, direction="up")
-        fp_interm_h_prob, fp_interm_h_state = hid__pen.get_h_given_v(
-                fp_bottom_h_prob, directed=True, direction="up")
+        h_prob, h_state = vis__hid.get_h_given_v(X, directed=True,
+                direction="up")
+        h_prob, h_state = hid__pen.get_h_given_v(h_prob, directed=True,
+                direction="up")
 
-        # Perform alternating Gibbs sampling
-        y = np.repeat(y, X.shape[0], axis=0)
-        v_state = np.hstack((fp_interm_h_state, y))
+        v_state = np.hstack((h_state, y))
 
         # Perform Gibbs sampling
         for it in range(self.n_gibbs_gener):
             h_prob, h_state = pen_lbl__top.get_h_given_v(v_state)
             v_prob, v_state = pen_lbl__top.get_v_given_h(h_state)
-            v_state[:, -10:] = y # fix y
+            v_state[:, -10:] = y # Fix y
 
             if it % 10 == 0:
                 v_state_data_only = np.copy(v_state[:, :-10])
 
                 # Backward propagation
-                bp_hid_h_prob, bp_hid_h_state = hid__pen.get_v_given_h(
-                        v_state_data_only, directed=True, direction="down")
-                bp_vis_h_prob, bp_vis_h_state = vis__hid.get_v_given_h(
-                        bp_hid_h_state, directed=True, direction="down")
+                h_prob, _h_state = hid__pen.get_v_given_h(v_state_data_only,
+                        directed=True, direction="down")
+                h_prob, h_state = vis__hid.get_v_given_h(h_state, directed=True,
+                        direction="down")
 
                 records.append([ax.imshow(np.mean(bp_vis_h_prob, axis=0).reshape(
                     self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True,
