@@ -254,14 +254,16 @@ class DeepBeliefNet():
             for it in range(n_iterations):
                 ## Wake-phase
                 # RBM vis__hid
-                v, vold = X, v
+                v = X
+                vold = v
 
                 ph, h = vis__hid.get_h_given_v(v, directed=True, direction="up")
                 pv, v = vis__hid.get_v_given_h(h, directed=True, direction="down")
                 vis__hid.update_generate_params(vold, h, pv)
 
                 # RBM hid__pen
-                v, vold = h, v
+                v = h
+                vold = v
 
                 ph, h = hid__pen.get_h_given_v(v, directed=True, direction="up")
                 pv, v = hid__pen.get_v_given_h(h, directed=True, direction="down")
@@ -280,14 +282,16 @@ class DeepBeliefNet():
 
                 ## Sleep-phase
                 # RBM hid__pen
-                h, hold = v, h
+                h = v
+                hold = h
 
                 pv, v = hid__pen.get_v_given_h(h, directed=True, direction="down")
                 ph, h = hid__pen.get_h_given_v(v, directed=True, direction="up")
                 hid__pen.update_recognize_params(hold, v, ph)
 
                 # RBM vis__hid
-                h, hold = v, h
+                h = v
+                hold = h
 
                 pv, v = vis__hid.get_v_given_h(h, directed=True, direction="down")
                 ph, h = vis__hid.get_h_given_v(v, directed=True, direction="up")
