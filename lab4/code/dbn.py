@@ -52,7 +52,7 @@ class DeepBeliefNet():
         self.image_size = image_size
         self.batch_size = batch_size
         self.n_gibbs_recog = 15
-        self.n_gibbs_gener = 200
+        self.n_gibbs_gener = 250
         self.n_gibbs_wakesleep = 5
         self.n_labels = n_labels
         self.reconstruction_errors = []
@@ -264,6 +264,7 @@ class DeepBeliefNet():
             pen_lbl__top.learning_rate = 1e-5
 
             for it in range(n_iterations):
+                print(f'Iteration ({it+1}/{n_iterations})')
                 ## Wake-phase
                 # RBM vis__hid
                 v = X
