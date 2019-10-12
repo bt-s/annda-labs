@@ -62,8 +62,8 @@ class RestrictedBoltzmannMachine():
         self.d_weight_h_to_v = np.zeros(self.d_weight_vh.shape).T
         self.d_bias_v = np.zeros((self.ndim_visible))
         self.d_bias_h = np.zeros((self.ndim_hidden))
-        self.momentum = 0.7
-        self.decay = 0.0001
+        self.momentum = 0
+        self.decay = 0
         self.learning_rate = learning_rate
         self.image_size = image_size
 
@@ -193,25 +193,25 @@ class RestrictedBoltzmannMachine():
 
             # Activate and sample hidden units again, based on generated visible
             # state
-            nh_prob, nh_state = self.get_h_given_v(v_state)
+            nh_prob, _ = self.get_h_given_v(v_state)
 
             # Reconstruct the complete hidden layer only during the last epoch
             if epoch == n_epochs-1:
                self.H[mb_start:mb_end, :] = nh_prob
 
             # Updating parameters
-            self.update_params(X_batch, ph_state, v_state, nh_state)
+            self.update_params(X_batch, ph_prob, v_prob, nh_prob)
 
             # Monitor the updates
             if it % n_it_per_epoch == 0 and it != 0:
                 end = time.time()
                 if self.is_top:
-                    print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
+                    print((f'Epoch {epoch+1}/{int(n_epochs - 1)}: recon. err = '
                         f'{round(np.linalg.norm(X[:, :-10] - V[:, :-10]), 2)}'))
                     if compute_rec_err:
                         errors.append(round(np.linalg.norm(X[:, :-10] - V[:, :-10]), 2))
                 else:
-                    print((f'Epoch {epoch}/{int(n_epochs - 1)}: recon. err = '
+                    print((f'Epoch {epoch+1}/{int(n_epochs - 1)}: recon. err = '
                         f'{round(np.linalg.norm(X - V), 2)}'))
                     if compute_rec_err:
                         errors.append(round(np.linalg.norm(X - V), 2))
@@ -329,16 +329,17 @@ class RestrictedBoltzmannMachine():
         Note: You could also add weight decay and momentum for weight updates.
         """
 
-        self.d_weight_vh = self.learning_rate * ((v0.T@h0 - v1.T@h1) - \
-                self.decay * self.weight_vh) + self.momentum * self.d_weight_vh
+        self.d_weight_vh = (1 - self.momentum) * self.learning_rate * \
+                ((v0.T@h0 - v1.T@h1) - self.decay * self.weight_vh) + \
+                self.momentum * self.d_weight_vh
         self.weight_vh += self.d_weight_vh
 
-        self.d_bias_v = self.learning_rate * np.mean(v0 - v1, axis=0)\
-                        + self.d_bias_v * self.momentum
+        self.d_bias_v = (1 - self.momentum) * self.learning_rate * \
+                np.mean(v0 - v1, axis=0) + self.d_bias_v * self.momentum
         self.bias_v += self.d_bias_v
 
-        self.d_bias_h = self.learning_rate * np.mean(h0 - h1, axis=0)\
-                        + self.d_bias_h * self.momentum
+        self.d_bias_h = (1 - self.momentum) * self.learning_rate * \
+                np.mean(h0 - h1, axis=0) + self.d_bias_h * self.momentum
         self.bias_h += self.d_bias_h
 
 
@@ -350,13 +351,13 @@ class RestrictedBoltzmannMachine():
             x (np.ndarray): activities or probabilities of output unit (target)
             y_hat (np.ndarray): activities or probabilities of output unit (prediction)
         """
-        self.d_weight_h_to_v = self.learning_rate * (x.T@(y - y_hat) - \
-                self.decay * self.weight_h_to_v) + self.momentum * \
-                self.d_weight_h_to_v
+        self.d_weight_h_to_v = (1 - self.momentum) * self.learning_rate * \
+                (x.T@(y - y_hat) - self.decay * self.weight_h_to_v) + \
+                self.momentum * self.d_weight_h_to_v
         self.weight_h_to_v += self.d_weight_h_to_v
 
-        self.d_bias_v += self.learning_rate * np.mean(y - y_hat, axis=0) + \
-                self.d_bias_v * self.momentum
+        self.d_bias_v += (1- self.momentum) * self.learning_rate * \
+                np.mean(y - y_hat, axis=0) + self.d_bias_v * self.momentum
         self.bias_v += self.d_bias_v
 
 
@@ -368,12 +369,12 @@ class RestrictedBoltzmannMachine():
             x (np.ndarray): activities or probabilities of output unit (target)
             y_hat (np.ndarray): activities or probabilities of output unit (prediction)
         """
-        self.d_weight_v_to_h = self.learning_rate * (x.T@(y - y_hat) - \
-                self.decay * self.weight_v_to_h) + self.momentum * \
-                self.d_weight_v_to_h
+        self.d_weight_v_to_h = (1 - self.momentum) * self.learning_rate * \
+                (x.T@(y - y_hat) - self.decay * self.weight_v_to_h) + \
+                self.momentum * self.d_weight_v_to_h
         self.weight_v_to_h += self.d_weight_v_to_h
 
-        self.d_bias_h += self.learning_rate * np.mean(y - y_hat, axis=0) + \
-                self.d_bias_h * self.momentum
+        self.d_bias_h += (1 - self.momentum) * self.learning_rate * \
+                np.mean(y - y_hat, axis=0) +  self.d_bias_h * self.momentum
         self.bias_h += self.d_bias_h
 
