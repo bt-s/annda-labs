@@ -193,14 +193,14 @@ class RestrictedBoltzmannMachine():
 
             # Activate and sample hidden units again, based on generated visible
             # state
-            nh_prob, nh_state = self.get_h_given_v(v_state)
+            nh_prob, _ = self.get_h_given_v(v_state)
 
             # Reconstruct the complete hidden layer only during the last epoch
             if epoch == n_epochs-1:
                self.H[mb_start:mb_end, :] = nh_prob
 
             # Updating parameters
-            self.update_params(X_batch, ph_state, v_state, nh_state)
+            self.update_params(X_batch, ph_prob, v_prob, nh_prob)
 
             # Monitor the updates
             if it % n_it_per_epoch == 0 and it != 0:
