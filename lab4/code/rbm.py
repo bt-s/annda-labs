@@ -323,3 +323,27 @@ class RestrictedBoltzmannMachine():
 
         return v_prob, v_state
 
+
+    def update_generate_params(self, y, x, y_hat):
+        """Update generative weight "weight_h_to_v" and bias "bias_v"
+            This is done during the wake-phase, a.k.a. going up
+        Args:
+            y (np.ndarray): activities or probabilities of input unit
+            x (np.ndarray): activities or probabilities of output unit (target)
+            y_hat (np.ndarray): activities or probabilities of output unit (prediction)
+        """
+        self.weight_h_to_v += self.learning_rate * np.dot(x.T,  (y - y_hat))
+        self.bias_v += self.learning_rate * np.mean(y - y_hat)
+
+
+    def update_recognize_params(self, y, x, y_hat):
+        """Update recognition weight "weight_v_to_h" and bias "bias_h"
+            This is done during the sleep-phase, a.k.a. going down
+        Args:
+            y (np.ndarray): activities or probabilities of input unit
+            x (np.ndarray): activities or probabilities of output unit (target)
+            y_hat (np.ndarray): activities or probabilities of output unit (prediction)
+        """
+        self.weight_v_to_h += self.learning_rate * np.dot(x.T, (y - y_hat))
+        self.bias_h += self.learning_rate * np.mean(y - y_hat)
+
