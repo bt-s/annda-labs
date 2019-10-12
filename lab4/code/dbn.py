@@ -220,60 +220,84 @@ class DeepBeliefNet():
                     name="pen+lbl--top")
 
 
-    def train_wakesleep_finetune(self, vis_trainset, lbl_trainset, n_iterations):
+    def train_wakesleep_finetune(self, X, y, n_iterations,
+            load_from_file=False, save_to_file=False):
         """Wake-sleep method for learning all the parameters of network.
         First tries to load previous saved parameters of the entire network.
-
         Args:
-          vis_trainset (np.ndarray): visible data shaped (size of training set,
-                                     size of visible layer)
-          lbl_trainset (np.ndarray): label data shaped (size of training set,
-                                     size of label layer)
+          X (np.ndarray): visible data shaped (size of training set,
+                          size of visible layer)
+          y (np.ndarray): label data shaped (size of training set,
+                          size of label layer)
           n_iterations (int): number of iterations of learning (each iteration
                               learns a mini-batch)
+          load_from_file (bool): Whether to load from file
+          save_to_file (bool): Whether to save to file
         """
-        print ("\nTraining wake-sleep...")
+        print("\n> Training wake-sleep...")
+        if load_from_file:
+            self.loadfromfile_dbn(loc="trained_dbn_4pm", name="vis--hid")
+            self.loadfromfile_dbn(loc="trained_dbn_4pm", name="hid--pen")
+            self.loadfromfile_rbm(loc="trained_dbn_4pm", name="pen+lbl--top")
 
-        try :
-            self.loadfromfile_dbn(loc="trained_dbn",name="vis--hid")
-            self.loadfromfile_dbn(loc="trained_dbn",name="hid--pen")
-            self.loadfromfile_rbm(loc="trained_dbn",name="pen+lbl--top")
+        else:
+            # Specify the RBMs
+            vis__hid = self.rbm_stack["vis--hid"]
+            hid__pen = self.rbm_stack["hid--pen"]
+            pen_lbl__top = self.rbm_stack["pen+lbl--top"]
 
-        except IOError :
-            self.n_samples = vis_trainset.shape[0]
+            # Set learning rates
+            vis__hid.learning_rate = 1e-5
+            hid__pen.learning_rate = 1e-5
+            pen_lbl__top.learning_rate = 1e-5
 
             for it in range(n_iterations):
-                # wake-phase : drive the network bottom-to-top using visible
-                # and label data
+                ## Wake-phase
+                # RBM vis__hid
+                v, vold = X, v
 
-                # alternating Gibbs sampling in the top RBM : also store
-                # neccessary information for learning this RBM
+                ph, h = vis__hid.get_h_given_v(v, directed=True, direction="up")
+                pv, v = vis__hid.get_v_given_h(h, directed=True, direction="down")
+                vis__hid.update_generate_params(vold, h, pv)
 
-                # sleep phase : from the activities in the top RBM, drive the
-                # network top-to-bottom
+                # RBM hid__pen
+                v, vold = h, v
 
-                # predictions : compute generative predictions from wake-phase
-                # activations, and recognize predictions from sleep-phase
-                # activations
+                ph, h = hid__pen.get_h_given_v(v, directed=True, direction="up")
+                pv, v = hid__pen.get_v_given_h(h, directed=True, direction="down")
+                hid__pen.update_generate_params(vold, h, pv)
 
-                # update generative parameters :
-                # here you will only use "update_generate_params" method from
-                # rbm class
+                v = h
 
-                # update parameters of top rbm:
-                # here you will only use "update_params" method from rbm class
+                # Training the top RBM with CD1
+                pen_lbl__top.cd1(np.hstack((v, y)), 60000)
 
-                # update generative parameters :
-                # here you will only use "update_recognize_params" method from
-                # rbm class
+                ## Alternating Gibbs sampling in the top RBM
+                for _ in range(self.n_gibbs_wakesleep):
+                    ph, h = pen_lbl__top.get_h_given_v(np.hstack((v, y)))
+                    pv, v = pen_lbl__top.get_v_given_h(h)
+                    v = v[:, :-10]
 
-                if it % self.print_period == 0 : print ("iteration=%7d"%it)
+                ## Sleep-phase
+                # RBM hid__pen
+                h, hold = v, h
 
-            self.savetofile_dbn(loc="trained_dbn",name="vis--hid")
-            self.savetofile_dbn(loc="trained_dbn",name="hid--pen")
-            self.savetofile_rbm(loc="trained_dbn",name="pen+lbl--top")
+                pv, v = hid__pen.get_v_given_h(h, directed=True, direction="down")
+                ph, h = hid__pen.get_h_given_v(v, directed=True, direction="up")
+                hid__pen.update_recognize_params(hold, v, ph)
 
-        return
+                # RBM vis__hid
+                h, hold = v, h
+
+                pv, v = vis__hid.get_v_given_h(h, directed=True, direction="down")
+                ph, h = vis__hid.get_h_given_v(v, directed=True, direction="up")
+                vis__hid.update_recognize_params(hold, v, ph)
+
+            if save_to_file:
+                self.savetofile_dbn(loc="trained_dbn", name="vis--hid")
+                self.savetofile_dbn(loc="trained_dbn", name="hid--pen")
+                self.savetofile_rbm(loc="trained_dbn", name="pen+lbl--top")
+
 
 
     def loadfromfile_rbm(self, loc, name):
