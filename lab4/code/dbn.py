@@ -169,13 +169,13 @@ class DeepBeliefNet():
           save_to_file (bool): Whether to save to file
         """
         if load_from_file:
-            self.loadfromfile_rbm(loc="trained_rbm_4pm", name="vis--hid")
+            self.loadfromfile_rbm(loc="trained_rbm", name="vis--hid")
             self.rbm_stack["vis--hid"].untwine_weights()
 
-            self.loadfromfile_rbm(loc="trained_rbm_4pm", name="hid--pen")
+            self.loadfromfile_rbm(loc="trained_rbm", name="hid--pen")
             self.rbm_stack["hid--pen"].untwine_weights()
 
-            self.loadfromfile_rbm(loc="trained_rbm_4pm", name="pen+lbl--top")
+            self.loadfromfile_rbm(loc="trained_rbm", name="pen+lbl--top")
 
         else:
             ## RBM VIS--HID
