@@ -262,11 +262,11 @@ class RestrictedBoltzmannMachine():
         self.weight_vh = None
 
 
-    def get_h_given_v(self, X_batch, directed=False, direction="up"):
+    def get_h_given_v(self, v, directed=False, direction="up"):
         """Compute probabilities p(h|v) and activations h ~ p(h|v)
 
         Args:
-            X_batch (np.ndarray): (size of mini-batch, size of visible layer)
+            v (np.ndarray): Units of the visible layer
             directed (bool): Whether to use weight_v_to_h or weight_vh
             direction (str): One of "up" or "down"
 
@@ -277,14 +277,14 @@ class RestrictedBoltzmannMachine():
                                   (size mini-batch, size hidden layer)
         """
         if not directed:
-            h_prob = self._sigmoid(self.bias_h + np.dot(X_batch, self.weight_vh))
+            h_prob = self._sigmoid(self.bias_h + np.dot(v, self.weight_vh))
         else:
             if direction == "up":
                 h_prob = self._sigmoid(self.bias_h + np.dot(
-                    X_batch, self.weight_v_to_h))
+                    v, self.weight_v_to_h))
             elif direction == "down":
                 h_prob = self._sigmoid(self.bias_h + np.dot(
-                    X_batch, self.weight_h_to_v))
+                    v, self.weight_h_to_v))
             else:
                 raise ValueError("Input argument <directed> has to be either 'up' or 'down'.")
 
@@ -293,11 +293,11 @@ class RestrictedBoltzmannMachine():
         return h_prob, h_state
 
 
-    def get_v_given_h(self, H_batch, directed=False, direction="up"):
+    def get_v_given_h(self, h, directed=False, direction="up"):
         """Compute probabilities p(v|h) and activations v ~ p(v|h)
 
         Args:
-           H_batch: shape is (size of mini-batch, size of hidden layer)
+            h: Units of the hidden layer
             directed (bool): Whether to use weight_v_to_h or weight_vh
             direction (str): One of "up" or "down"
 
@@ -308,7 +308,7 @@ class RestrictedBoltzmannMachine():
         """
         if self.is_top:
             # Separate H_batch into the data support and labels support
-            support = self.bias_v + np.dot(H_batch, self.weight_vh.T)
+            support = self.bias_v + np.dot(h, self.weight_vh.T)
             support_data = support[:, :-self.n_labels]
             support_labels = support[:, -self.n_labels:]
 
@@ -326,15 +326,15 @@ class RestrictedBoltzmannMachine():
 
         else:
             if not directed:
-                v_prob = self._sigmoid(self.bias_v + np.dot(H_batch,
+                v_prob = self._sigmoid(self.bias_v + np.dot(h,
                     self.weight_vh.T))
             else:
                 if direction == "up":
                     v_prob = self._sigmoid(self.bias_v + np.dot(
-                        H_batch, self.weight_v_to_h))
+                        h, self.weight_v_to_h))
                 elif direction == "down":
                     v_prob = self._sigmoid(self.bias_v + np.dot(
-                        H_batch, self.weight_h_to_v))
+                        h, self.weight_h_to_v))
                 else:
                     raise ValueError("Input argument <directed> has to be either 'up' or 'down'.")
 
