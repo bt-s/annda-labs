@@ -163,4 +163,4 @@ def plot_reconstruction_err(errors, fname="", save_fig=False):
     plt.xlabel("Epochs")
     plt.ylabel("Reconstruction error")
     if save_fig: plt.savefig(fname)
-    plt.show()
+    else: plt.show()
