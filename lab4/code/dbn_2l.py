@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-"""dbn.py - Containing the DeepBeliefNet class
-    - Implmentend with the typical 784 - 500 - 500 + 10 - 2000 architecture
+"""dbn.py - Containing the DeepBeliefNet class.
+    - Implemneted with a reduced 784 - 500 + 10 - 2000 architecture
 
 For the DD2437 Artificial Neural Networks and Deep Architectures course at KTH
 Royal Institute of Technology
@@ -16,14 +16,13 @@ from util import *
 from rbm import RestrictedBoltzmannMachine as RBM
 
 
-class DeepBeliefNet():
+class DeepBeliefNetTwoLayer():
     """A Deep Belief Net
 
-    network          : [top] <---> [pen] ---> [hid] ---> [vis]
+    network          : [top] <---> [hid] ---> [vis]
                                `-> [lbl]
     lbl : label
     top : top
-    pen : penultimate
     hid : hidden
     vis : visible"""
 
@@ -41,10 +40,7 @@ class DeepBeliefNet():
             'vis--hid': RBM(ndim_visible=sizes["vis"], ndim_hidden=sizes["hid"],
                 is_bottom=True, image_size=image_size, batch_size=batch_size),
 
-            'hid--pen': RBM(ndim_visible=sizes["hid"], ndim_hidden=sizes["pen"],
-                batch_size=batch_size),
-
-            'pen+lbl--top': RBM(ndim_visible=sizes["pen"] + sizes["lbl"],
+            'hid+lbl--top': RBM(ndim_visible=sizes["hid"] + sizes["lbl"],
                 ndim_hidden=sizes["top"], is_top=True, n_labels=n_labels,
                 batch_size=batch_size)
         }
@@ -73,20 +69,17 @@ class DeepBeliefNet():
 
         # Specify the RBMS
         vis__hid = self.rbm_stack["vis--hid"]
-        hid__pen = self.rbm_stack["hid--pen"]
-        pen_lbl__top = self.rbm_stack["pen+lbl--top"]
+        hid_lbl__top = self.rbm_stack["hid+lbl--top"]
 
         # Forward propagation through the network
         h_prob, h_state = vis__hid.get_h_given_v(X, directed=True,
-                direction="up")
-        h_prob, h_state = hid__pen.get_h_given_v(h_prob, directed=True,
                 direction="up")
 
         # Perform alternating Gibbs sampling
         v_prob = np.hstack((h_prob, y_init))
         for _ in range(self.n_gibbs_recog):
-            h_prob, h_state = pen_lbl__top.get_h_given_v(v_prob)
-            v_prob, v_state = pen_lbl__top.get_v_given_h(h_state)
+            h_prob, h_state = hid_lbl__top.get_h_given_v(v_prob)
+            v_prob, v_state = hid_lbl__top.get_v_given_h(h_state)
 
         y_pred = v_state[:, -10:]
 
@@ -109,31 +102,26 @@ class DeepBeliefNet():
 
         # Specify the RBMs
         vis__hid = self.rbm_stack["vis--hid"]
-        hid__pen = self.rbm_stack["hid--pen"]
-        pen_lbl__top = self.rbm_stack["pen+lbl--top"]
+        hid_lbl__top = self.rbm_stack["hid+lbl--top"]
 
         # Forward propagation through the network
         h_prob, h_state = vis__hid.get_h_given_v(X, directed=True,
-                direction="up")
-        h_prob, h_state = hid__pen.get_h_given_v(h_prob, directed=True,
                 direction="up")
 
         v_state = np.hstack((h_state.reshape(1, -1), y))
 
         # Perform Gibbs sampling
         for it in range(self.n_gibbs_gener):
-            h_prob, h_state = pen_lbl__top.get_h_given_v(v_state)
-            v_prob, v_state = pen_lbl__top.get_v_given_h(h_state)
+            h_prob, h_state = hid_lbl__top.get_h_given_v(v_state)
+            v_prob, v_state = hid_lbl__top.get_v_given_h(h_state)
             v_state[:, -10:] = y # Fix y
 
             if it % 10 == 0:
                 v_state_data_only = np.copy(v_state[:, :-10])
 
                 # Backward propagation
-                h_prob, h_state = hid__pen.get_v_given_h(v_state_data_only,
+                h_prob, h_state = vis__hid.get_v_given_h(v_state_data_only,
                         directed=True, direction="down")
-                h_prob, h_state = vis__hid.get_v_given_h(h_state, directed=True,
-                        direction="down")
 
                 records.append([ax.imshow(np.mean(h_prob, axis=0).reshape(
                     self.image_size), cmap="bwr", vmin=0, vmax=1, animated=True,
@@ -162,13 +150,10 @@ class DeepBeliefNet():
             compute_rec_err (bool): Whether to compute the reconstruction error
         """
         if load_from_file:
-            self.loadfromfile_rbm(loc="trained_rbm", name="vis--hid")
+            self.loadfromfile_rbm(loc="trained_rbm_2l", name="vis--hid")
             self.rbm_stack["vis--hid"].untwine_weights()
 
-            self.loadfromfile_rbm(loc="trained_rbm", name="hid--pen")
-            self.rbm_stack["hid--pen"].untwine_weights()
-
-            self.loadfromfile_rbm(loc="trained_rbm", name="pen+lbl--top")
+            self.loadfromfile_rbm(loc="trained_rbm_2l", name="hid+lbl--top")
 
         else:
             ## RBM VIS--HID
@@ -183,54 +168,35 @@ class DeepBeliefNet():
                 self.rbm_stack["vis--hid"].cd1(X, n_iterations=n_iterations)
 
             # Save layer represenetations to file if requested
-            if save_to_file: self.savetofile_rbm(loc="trained_rbm",
+            if save_to_file: self.savetofile_rbm(loc="trained_rbm_2l",
                     name="vis--hid")
 
             # Untwine the weights after learning
             self.rbm_stack["vis--hid"].untwine_weights()
 
 
-            ## RBM HID--PEN
-            print ("\n>> Training RBM hid--pen...")
+            ## RBM HID+LBL--TOP
+            print ("\n>> Training layer hid+lbl--top...")
 
-            # Learn the weights of the hid--pen RBM by means of CD1
+            # Learn the weights of the hid+lbl--top RBM by means of CD1
             if compute_rec_err:
-                err = self.rbm_stack["hid--pen"].cd1(self.rbm_stack["vis--hid"].H,
-                        n_iterations=n_iterations, compute_rec_err=compute_rec_err)
-                self.reconstruction_errors.append(err)
-            else:
-                self.rbm_stack["hid--pen"].cd1(self.rbm_stack["vis--hid"].H,
-                        n_iterations=n_iterations)
-
-            # Save layer represenetations to file if requested
-            if save_to_file: self.savetofile_rbm(loc="trained_rbm",
-                    name="hid--pen")
-
-            # Untwine the weights after learning
-            self.rbm_stack["hid--pen"].untwine_weights()
-
-
-            ## RBM PEN+LBL--TOP
-            print ("\n>> Training layer pen+lbl--top...")
-
-            # Learn the weights of the pen+lbl--top RBM by means of CD1
-            if compute_rec_err:
-                err = self.rbm_stack["pen+lbl--top"].cd1(np.hstack(
-                    (self.rbm_stack["hid--pen"].H, y)), n_iterations=n_iterations,
+                err = self.rbm_stack["hid+lbl--top"].cd1(np.hstack(
+                    (self.rbm_stack["vis--hid"].H, y)), n_iterations=n_iterations,
                     compute_rec_err=compute_rec_err)
                 self.reconstruction_errors.append(err)
             else:
-                self.rbm_stack["pen+lbl--top"].cd1(np.hstack(
-                    (self.rbm_stack["hid--pen"].H, y)),
+                self.rbm_stack["hid+lbl--top"].cd1(np.hstack(
+                    (self.rbm_stack["vis--hid"].H, y)),
                     n_iterations=n_iterations)
 
             # Save layer represenetations to file if requested
-            if save_to_file: self.savetofile_rbm(loc="trained_rbm",
-                    name="pen+lbl--top")
+            if save_to_file: self.savetofile_rbm(loc="trained_rbm_2l",
+                    name="hid+lbl--top")
 
             if compute_rec_err:
                 plot_reconstruction_err(self.reconstruction_errors,
-                        fname="plots_and_animations/errors.pdf", save_fig=True)
+                        fname="plots_and_animations/errors_2l.pdf",
+                        save_fig=True)
 
 
     def train_wakesleep_finetune(self, X, y, n_iterations,
@@ -249,23 +215,19 @@ class DeepBeliefNet():
         """
         print("\n> Training wake-sleep...")
         if load_from_file:
-            self.loadfromfile_dbn(loc="trained_dbn", name="vis--hid")
-            self.loadfromfile_dbn(loc="trained_dbn", name="hid--pen")
-            self.loadfromfile_rbm(loc="trained_dbn", name="pen+lbl--top")
+            self.loadfromfile_dbn(loc="trained_dbn_2l", name="vis--hid")
+            self.loadfromfile_rbm(loc="trained_dbn_2l", name="hid+lbl--top")
 
         else:
             # Specify the RBMs
             vis__hid = self.rbm_stack["vis--hid"]
-            hid__pen = self.rbm_stack["hid--pen"]
-            pen_lbl__top = self.rbm_stack["pen+lbl--top"]
+            hid_lbl__top = self.rbm_stack["hid+lbl--top"]
 
             # Set learning rates
             vis__hid.learning_rate = 1e-5
-            hid__pen.learning_rate = 1e-5
-            pen_lbl__top.learning_rate = 1e-5
+            hid_lbl__top.learning_rate = 1e-5
 
             for it in range(n_iterations):
-                print(f'Iteration ({it+1}/{n_iterations})')
                 ## Wake-phase
                 # RBM vis__hid
                 v = X
@@ -275,34 +237,18 @@ class DeepBeliefNet():
                 pv, v = vis__hid.get_v_given_h(h, directed=True, direction="down")
                 vis__hid.update_generate_params(vold, h, pv)
 
-                # RBM hid__pen
-                v = h
-                vold = v
-
-                ph, h = hid__pen.get_h_given_v(v, directed=True, direction="up")
-                pv, v = hid__pen.get_v_given_h(h, directed=True, direction="down")
-                hid__pen.update_generate_params(vold, h, pv)
-
                 v = h
 
                 # Training the top RBM with CD1
-                pen_lbl__top.cd1(np.hstack((v, y)), X.shape[0])
+                hid_lbl__top.cd1(np.hstack((v, y)), X.shape[0])
 
                 ## Alternating Gibbs sampling in the top RBM
                 for _ in range(self.n_gibbs_wakesleep):
-                    ph, h = pen_lbl__top.get_h_given_v(np.hstack((v, y)))
-                    pv, v = pen_lbl__top.get_v_given_h(h)
+                    ph, h = hid_lbl__top.get_h_given_v(np.hstack((v, y)))
+                    pv, v = hid_lbl__top.get_v_given_h(h)
                     v = v[:, :-10]
 
                 ## Sleep-phase
-                # RBM hid__pen
-                h = v
-                hold = h
-
-                pv, v = hid__pen.get_v_given_h(h, directed=True, direction="down")
-                ph, h = hid__pen.get_h_given_v(v, directed=True, direction="up")
-                hid__pen.update_recognize_params(hold, v, ph)
-
                 # RBM vis__hid
                 h = v
                 hold = h
@@ -312,9 +258,8 @@ class DeepBeliefNet():
                 vis__hid.update_recognize_params(hold, v, ph)
 
             if save_to_file:
-                self.savetofile_dbn(loc="trained_dbn", name="vis--hid")
-                self.savetofile_dbn(loc="trained_dbn", name="hid--pen")
-                self.savetofile_rbm(loc="trained_dbn", name="pen+lbl--top")
+                self.savetofile_dbn(loc="trained_dbn_2l", name="vis--hid")
+                self.savetofile_rbm(loc="trained_dbn_2l", name="hid+lbl--top")
 
 
 

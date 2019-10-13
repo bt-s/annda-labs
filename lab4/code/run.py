@@ -14,10 +14,12 @@ __author__ = "Anton Anderzén, Stella Katsarou, Bas Straathof"
 from util import *
 from rbm import RestrictedBoltzmannMachine
 from dbn import DeepBeliefNet
+from dbn_2l import DeepBeliefNetTwoLayer
 
 PLOTS = False
 RBM = False
 DBN = True
+TWO_LAYER = True
 CLASSIFY = True
 GENERATE = True
 WAKE_SLEEP = True
@@ -55,23 +57,32 @@ if __name__ == "__main__":
         # Restricted Boltzmann Machine
         print ("\nStarting a Restricted Boltzmann Machine...")
 
-        rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * image_size[1],
-                ndim_hidden=200, is_bottom=True, image_size=image_size, is_top=False,
-                n_labels=10, batch_size=20, learning_rate=0.1)
+        rbm = RestrictedBoltzmannMachine(ndim_visible=image_size[0] * \
+                image_size[1], ndim_hidden=200, is_bottom=True,
+                image_size=image_size, is_top=False, n_labels=10, batch_size=20,
+                learning_rate=0.1)
 
         rbm.cd1(X=train_imgs, n_iterations=30000)
 
     if DBN:
         # Deep Belief Net
-        print ("\n>>> Starting a Deep Belief Net...")
+        if TWO_LAYER:
+            print ("\n>>> Starting a two-layer Deep Belief Net...")
 
-        dbn = DeepBeliefNet(sizes={"vis": image_size[0] * image_size[1],
-            "hid": 500, "pen": 500, "top": 2000, "lbl": 10},
-            image_size=image_size, n_labels=10, batch_size=10)
+            # Initialize the two layer network
+            dbn = DeepBeliefNetTwoLayer(sizes={"vis": image_size[0] *
+                image_size[1], "hid": 500, "top": 2000, "lbl": 10},
+                image_size=image_size, n_labels=10, batch_size=10)
+        else:
+            print ("\n>>> Starting a two-layer Deep Belief Net...")
+            # Initialize the three layer network
+            dbn = DeepBeliefNet(sizes={"vis": image_size[0] * image_size[1],
+                "hid": 500, "pen": 500, "top": 2000, "lbl": 10},
+                image_size=image_size, n_labels=10, batch_size=10)
 
         # Greedy layer-wise training
         dbn.train_greedylayerwise(X=train_imgs, y=train_lbls,
-                n_iterations=60000, compute_rec_err=True, save_to_file=True)
+                n_iterations=60000, compute_rec_err=True)
 
         if CLASSIFY:
             # Recognize/Classify images
@@ -85,12 +96,16 @@ if __name__ == "__main__":
                 digit_1hot[0, digit] = 1
                 # Initialize based on a random training input
                 # (In this case we always use the first training image)
-                dbn.generate(X=train_imgs[0], y=digit_1hot, name="greedy")
+                if TWO_LAYER:
+                    dbn.generate(X=train_imgs[0], y=digit_1hot,
+                            name="greedy_2l")
+                else:
+                    dbn.generate(X=train_imgs[0], y=digit_1hot, name="greedy")
 
     if WAKE_SLEEP:
         # Fine-tune wake-sleep training
         dbn.train_wakesleep_finetune(X=train_imgs, y=train_lbls,
-                n_iterations=16, save_to_file=True)
+                n_iterations=16)
 
         if CLASSIFY:
             dbn.recognize(train_imgs, train_lbls)
@@ -103,5 +118,8 @@ if __name__ == "__main__":
                 digit_1hot[0, digit] = 1
                 # Initialize based on a random training input
                 # (In this case we always use the first training image)
-                dbn.generate(X=train_imgs[0], y=digit_1hot, name="fine")
+                if TWO_LAYER:
+                    dbn.generate(X=train_imgs[0], y=digit_1hot, name="fine_2l")
+                else:
+                    dbn.generate(X=train_imgs[0], y=digit_1hot, name="fine")
 
